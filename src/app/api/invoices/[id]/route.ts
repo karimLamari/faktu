@@ -9,12 +9,12 @@ import mongoose from 'mongoose';
 
 
 // GET a single invoice by ID
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
-  const { id } = params;
+  const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'ID de facture invalide' }, { status: 400 });
   }
@@ -32,12 +32,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PATCH (update) an invoice by ID
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
-  const { id } = params;
+  const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'ID de facture invalide' }, { status: 400 });
   }
@@ -68,12 +68,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // DELETE an invoice by ID
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
-  const { id } = params;
+  const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'ID de facture invalide' }, { status: 400 });
   }
