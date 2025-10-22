@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/config';
+import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Client from '@/models/Client';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -7,7 +6,7 @@ import ClientList from '@/components/clients/ClientList';
 import { redirect } from 'next/navigation';
 
 export default async function ClientsPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     redirect('/login');
   }

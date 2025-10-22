@@ -1,21 +1,22 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import InvoiceCarousel3D from '@/components/ui/InvoiceCarousel3D';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm">
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             📄 FAKTU
           </div>
           <div className="space-x-2">
             <Button variant="ghost" asChild>
               <Link href="/login">Connexion</Link>
             </Button>
-            <Button asChild>
+            <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
               <Link href="/register">S'inscrire</Link>
             </Button>
           </div>
@@ -24,109 +25,52 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-16">
-        <div className="text-center max-w-4xl mx-auto mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Gérez vos factures en toute simplicité
+        <div className="text-center mb-20">
+          <div className="inline-block mb-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+            ✨ Solution de facturation moderne
+          </div>
+          <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+            Gérez vos factures en toute
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> simplicité</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Une application complète pour créer, gérer et suivre vos factures professionnelles. 
-            Parfait pour les freelances et petites entreprises.
+          <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto">
+            Une application complète et intuitive pour créer, gérer et suivre vos factures professionnelles. 
+            Parfait pour les freelances et petites entreprises qui veulent gagner du temps.
           </p>
-          <div className="space-x-4">
-            <Button size="lg" asChild>
-              <Link href="/register">Commencer gratuitement</Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8">
+              <Link href="/register">
+                Commencer gratuitement
+                <span className="ml-2">→</span>
+              </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button size="lg" variant="outline" asChild className="text-lg px-8 border-2">
               <Link href="/login">Se connecter</Link>
             </Button>
           </div>
+          <p className="text-sm text-gray-500 mt-6">
+            ✓ Aucune carte bancaire requise  •  ✓ Essai gratuit  •  ✓ Support 24/7
+          </p>
         </div>
 
-        {/* Features */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">📝</span>
-                Création facile
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Créez vos factures rapidement avec notre éditeur intuitif et la prévisualisation en temps réel.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">👥</span>
-                Gestion clients
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Organisez vos clients et retrouvez facilement leurs informations et historique de facturation.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">📧</span>
-                Envoi automatique
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Envoyez vos factures par email directement depuis l'application avec génération PDF automatique.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">📊</span>
-                Suivi avancé
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Suivez le statut de vos factures, les paiements et obtenez des insights sur votre activité.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">🔒</span>
-                Sécurisé
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Vos données sont protégées avec un chiffrement de niveau entreprise et des sauvegardes automatiques.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">📱</span>
-                Responsive
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Accédez à votre application depuis n'importe quel appareil avec notre design entièrement responsive.
-              </CardDescription>
-            </CardContent>
-          </Card>
+        {/* Features Section with 3D Carousel */}
+        <div className="mb-20">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+              Tout ce dont vous avez besoin
+            </h2>
+            <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-4">
+              Découvrez nos fonctionnalités en 3D
+            </p>
+          </div>
+          
+          {/* Carrousel 3D centré et responsive */}
+          <div className="relative w-full max-w-4xl mx-auto px-4">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-10 blur-3xl rounded-full"></div>
+            <div className="relative z-10">
+              <InvoiceCarousel3D />
+            </div>
+          </div>
         </div>
 
         {/* CTA Section */}

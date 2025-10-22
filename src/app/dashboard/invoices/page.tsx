@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/config';
+import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Invoice from '@/models/Invoice';
 import Client from '@/models/Client';
@@ -8,7 +7,7 @@ import { InvoiceList } from '@/components/invoices/InvoiceList';
 import { redirect } from 'next/navigation';
 
 export default async function InvoicesPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     redirect('/login');
   }

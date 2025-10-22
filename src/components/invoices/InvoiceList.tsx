@@ -5,11 +5,8 @@ import { z } from "zod";
 import { invoiceSchema } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { EmptyStateButton } from "@/components/ui/EmptyStateButton";
-import { Table } from "@/components/ui/table";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import InvoiceCard from "./InvoiceCard";
+import InvoiceFilters from "./InvoiceFilters";
 import { IInvoice } from "@/models/Invoice";
 import InvoiceFormModal from "./InvoiceFormModal";
 
@@ -28,35 +25,16 @@ const statusColors: Record<string, string> = {
 
 export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
   const [invoices, setInvoices] = useState<IInvoice[]>(initialInvoices);
-  const [filter, setFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [notif, setNotif] = useState<string>("");
+  
   // Formulaire modal state
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<any | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [editInvoice, setEditInvoice] = useState<IInvoice | null>(null);
-
-  // Listener pour ouverture modale depuis ClientList
-  useState(() => {
-    if (typeof window === 'undefined') return;
-    const handler = (e: any) => {
-      const clientId = e.detail?.clientId || clients[0]?._id || "";
-      setForm({
-        clientId,
-        issueDate: new Date().toISOString().slice(0, 10),
-        dueDate: new Date().toISOString().slice(0, 10),
-        items: [],
-        status: "draft",
-      });
-      setEditInvoice(null);
-      setFormError(null);
-      setShowForm(true);
-    };
-    window.addEventListener('open-invoice-modal', handler);
-    return () => window.removeEventListener('open-invoice-modal', handler);
-  });
 
   const openNew = () => {
     setForm({
@@ -126,7 +104,26 @@ export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
     }
   };
 
-  // ...
+  // Filtrage des factures
+  const filteredInvoices = invoices.filter((inv) => {
+    // Filtre par statut
+    if (statusFilter && inv.status !== statusFilter) {
+      return false;
+    }
+    
+    // Filtre par recherche
+    if (search) {
+      const client = clients.find((c) => c._id.toString() === inv.clientId?.toString());
+      const clientName = client?.companyInfo?.legalName || client?.name || "";
+      const searchLower = search.toLowerCase();
+      return (
+        inv.invoiceNumber?.toLowerCase().includes(searchLower) ||
+        clientName.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return true;
+  });
 
   return (
     <div>
@@ -139,57 +136,59 @@ export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
         />
       ) : (
         <div>
-          <Button onClick={openNew} className="mb-4">Nouvelle facture</Button>
-          {notif && <div className="mb-2 text-green-600">{notif}</div>}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Factures</h2>
+            <Button onClick={openNew}>Nouvelle facture</Button>
+          </div>
+          
+          {notif && (
+            <div className="mb-4 p-3 bg-green-50 text-green-700 rounded border border-green-200">
+              {notif}
+            </div>
+          )}
+
+          {/* Composant de filtres */}
+          <InvoiceFilters
+            search={search}
+            onSearchChange={setSearch}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            onClearFilters={() => {
+              setSearch('');
+              setStatusFilter('');
+            }}
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {invoices
-              .filter((inv) => {
-                if (!search) return true;
-                const client = clients.find((c) => c._id.toString() === inv.clientId?.toString());
-                const clientName = client?.companyInfo?.legalName || client?.name || "";
-                return (
-                  inv.invoiceNumber?.toLowerCase().includes(search.toLowerCase()) ||
-                  clientName.toLowerCase().includes(search.toLowerCase())
-                );
-              })
-              .map((inv) => {
-                const client = clients.find((c) => c._id.toString() === inv.clientId?.toString());
-                const clientName = client?.companyInfo?.legalName || client?.name || "";
-                return (
-                  <Card key={inv._id?.toString() || inv.invoiceNumber} className="p-4 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg mb-1">{inv.invoiceNumber}</h3>
-                      <p className="text-sm text-gray-600">Client : {clientName}</p>
-                      <p className="text-sm text-gray-600">Date : {inv.issueDate ? new Date(inv.issueDate).toLocaleDateString() : ""}</p>
-                      <p className="text-sm text-gray-600">Montant : {inv.total?.toFixed(2) || ""} €</p>
-                      <p className="text-sm text-gray-600">Échéance : {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : ""}</p>
-                      <Badge className={statusColors[inv.status] || "bg-gray-100 text-gray-800"}>{inv.status}</Badge>
-                        <div className="mt-2">
-                          <span className="text-xs text-gray-500">Statut paiement : <span className="font-semibold">{inv.paymentStatus}</span></span>
-                        </div>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button size="sm" variant="outline" onClick={() => openEdit(inv)}>Modifier</Button>
-                      <Button size="sm" variant="destructive" onClick={async () => {
-                        if (!inv._id) return;
-                        if (!window.confirm("Supprimer cette facture ?")) return;
-                        try {
-                          const res = await fetch(`/api/invoices/${inv._id}`, { method: "DELETE" });
-                          if (!res.ok) {
-                            const data = await res.json();
-                            throw new Error(data.error || "Erreur lors de la suppression");
-                          }
-                          setInvoices((prev) => prev.filter((i) => i._id !== inv._id));
-                          setNotif("Facture supprimée avec succès.");
-                        } catch (e: any) {
-                          alert(e.message || "Erreur inconnue lors de la suppression");
-                        }
-                      }}>Supprimer</Button>
-                      <Button size="sm" variant="outline" onClick={() => handleExportPDF(inv._id?.toString() || "")}>PDF</Button>
-                    </div>
-                  </Card>
-                );
-              })}
+            {filteredInvoices.map((inv) => {
+              const client = clients.find((c) => c._id.toString() === inv.clientId?.toString());
+              const clientName = client?.companyInfo?.legalName || client?.name || "";
+              return (
+                <InvoiceCard
+                  key={inv._id?.toString() || inv.invoiceNumber}
+                  invoice={inv}
+                  clientName={clientName}
+                  statusColor={statusColors[inv.status] || "bg-gray-100 text-gray-800"}
+                  onEdit={openEdit}
+                  onDelete={async (invoice) => {
+                    if (!invoice._id) return;
+                    if (!window.confirm("Supprimer cette facture ?")) return;
+                    try {
+                      const res = await fetch(`/api/invoices/${invoice._id}`, { method: "DELETE" });
+                      if (!res.ok) {
+                        const data = await res.json();
+                        throw new Error(data.error || "Erreur lors de la suppression");
+                      }
+                      setInvoices((prev) => prev.filter((i) => i._id !== invoice._id));
+                      setNotif("Facture supprimée avec succès.");
+                    } catch (e: any) {
+                      alert(e.message || "Erreur inconnue lors de la suppression");
+                    }
+                  }}
+                  onPDF={handleExportPDF}
+                />
+              );
+            })}
           </div>
         </div>
       )}
@@ -205,7 +204,6 @@ export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
         editMode={!!editInvoice}
         handleFormChange={handleFormChange}
       />
-        {/* Ajout des champs paymentStatus et paymentMethod dans le formulaire modal */}
     </div>
   );
 }

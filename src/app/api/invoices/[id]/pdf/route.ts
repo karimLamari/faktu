@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/config';
+import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Invoice from '@/models/Invoice';
 import Client from '@/models/Client';
@@ -170,7 +169,14 @@ function InvoiceHtml({ invoice, client, user }: any) {
           .qty-column { width: 60px; text-align: center; }
           .description-column { width: auto; }
           .unit-price-column { width: 100px; text-align: right; }
+          .tva-column { width: 80px; text-align: right; }
           .total-column { width: 100px; text-align: right; font-weight: 600; }
+          
+          /* Alignement des en-têtes avec les colonnes */
+          .items-table th.qty-column { text-align: center; }
+          .items-table th.unit-price-column { text-align: right; }
+          .items-table th.tva-column { text-align: right; }
+          .items-table th.total-column { text-align: right; }
           .totals-section {
             display: flex;
             justify-content: flex-end;
@@ -335,8 +341,9 @@ function InvoiceHtml({ invoice, client, user }: any) {
   `;
 }
 
+
 export async function GET(request: NextRequest, context: any) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

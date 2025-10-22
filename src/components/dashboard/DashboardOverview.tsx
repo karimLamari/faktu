@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import StatsCard from './StatsCard';
 
 export default function DashboardOverview() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -33,19 +34,20 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-6">
+      {/* Statistiques avec StatsCard */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow border">
-          <div className="text-sm text-gray-500">Chiffre d'affaires</div>
-          <div className="text-2xl font-bold">€{totalCA.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow border">
-          <div className="text-sm text-gray-500">Factures en attente</div>
-          <div className="text-2xl font-bold">{pendingCount}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow border">
-          <div className="text-sm text-gray-500">Clients</div>
-          <div className="text-2xl font-bold">{clients.length}</div>
-        </div>
+        <StatsCard
+          label="Chiffre d'affaires"
+          value={`€${totalCA.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}`}
+        />
+        <StatsCard
+          label="Factures en attente"
+          value={pendingCount}
+        />
+        <StatsCard
+          label="Clients"
+          value={clients.length}
+        />
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow border">

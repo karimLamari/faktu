@@ -1,14 +1,16 @@
-type Client = z.infer<typeof clientSchema> & { _id: string };
 "use client";
 
 import React, { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ClientForm from "./ClientForm";
+import ClientCard from "./ClientCard";
+import InvoiceFormModal from "../invoices/InvoiceFormModal";
 import { z } from "zod";
 import { clientSchema } from "@/lib/validations";
 import { EmptyStateButton } from "../ui/EmptyStateButton";
+
+export type Client = z.infer<typeof clientSchema> & { _id: string };
 
 
 type ClientListProps = {
@@ -20,11 +22,33 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 	const [search, setSearch] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-		const [notif, setNotif] = useState<string | null>(null);
-		const [editClient, setEditClient] = useState<Client | null>(null);
-		const [editForm, setEditForm] = useState<Partial<Client> | null>(null);
-		const [editError, setEditError] = useState<string | null>(null);
-		const [editLoading, setEditLoading] = useState(false);
+	const [notif, setNotif] = useState<string | null>(null);
+	
+	// États pour l'édition de client
+	const [editClient, setEditClient] = useState<Client | null>(null);
+	const [editForm, setEditForm] = useState<Partial<Client> | null>(null);
+	const [editError, setEditError] = useState<string | null>(null);
+	const [editLoading, setEditLoading] = useState(false);
+	
+	// États pour la création de facture
+	const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+	const [selectedClientForInvoice, setSelectedClientForInvoice] = useState<Client | null>(null);
+	const [invoiceForm, setInvoiceForm] = useState<any>({
+		clientId: "",
+		issueDate: new Date().toISOString().slice(0, 10),
+		dueDate: "",
+		items: [{ description: "", quantity: 1, unitPrice: 0, taxRate: 0, unit: "unit" }],
+		paymentStatus: "pending",
+		paymentMethod: "bank_transfer",
+		subtotal: 0,
+		taxAmount: 0,
+		total: 0,
+		balanceDue: 0,
+		amountPaid: 0,
+		notes: "",
+	});
+	const [invoiceFormError, setInvoiceFormError] = useState<string | null>(null);
+	const [invoiceFormLoading, setInvoiceFormLoading] = useState(false);
 	const openEdit = (client: Client) => {
 		setEditClient(client);
 		setEditForm({ ...client });
@@ -100,6 +124,63 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 			setError(e.message || "Erreur inconnue");
 		} finally {
 			setLoading(false);
+			setTimeout(() => setNotif(null), 3000);
+		}
+	};
+
+	// Handler pour ouvrir le modal de création de facture
+	const handleNewInvoice = (client: Client) => {
+		setSelectedClientForInvoice(client);
+		const dueDate = new Date();
+		dueDate.setDate(dueDate.getDate() + (client.paymentTerms || 30));
+		setInvoiceForm({
+			...invoiceForm,
+			clientId: client._id,
+			dueDate: dueDate.toISOString().slice(0, 10),
+		});
+		setInvoiceModalOpen(true);
+	};
+
+	const handleInvoiceFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+		const { name, value } = e.target;
+		setInvoiceForm((prev: any) => ({ ...prev, [name]: value }));
+	};
+
+	const handleInvoiceSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setInvoiceFormLoading(true);
+		setInvoiceFormError(null);
+		try {
+			const res = await fetch("/api/invoices", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(invoiceForm),
+			});
+			const data = await res.json();
+			if (!res.ok) {
+				throw new Error(data.error || "Erreur lors de la création de la facture");
+			}
+			setNotif("Facture créée avec succès.");
+			setInvoiceModalOpen(false);
+			// Réinitialiser le formulaire
+			setInvoiceForm({
+				clientId: "",
+				issueDate: new Date().toISOString().slice(0, 10),
+				dueDate: "",
+				items: [{ description: "", quantity: 1, unitPrice: 0, taxRate: 0, unit: "unit" }],
+				paymentStatus: "pending",
+				paymentMethod: "bank_transfer",
+				subtotal: 0,
+				taxAmount: 0,
+				total: 0,
+				balanceDue: 0,
+				amountPaid: 0,
+				notes: "",
+			});
+		} catch (e: any) {
+			setInvoiceFormError(e.message || "Erreur inconnue");
+		} finally {
+			setInvoiceFormLoading(false);
 			setTimeout(() => setNotif(null), 3000);
 		}
 	};
@@ -210,6 +291,7 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 				)}
 			{notif && <div className="text-green-600 font-medium">{notif}</div>}
 			{error && <div className="text-red-600 font-medium">{error}</div>}
+			
 			{filteredClients.length === 0 ? (
 				<EmptyStateButton
 					label="Ajouter un client"
@@ -219,42 +301,56 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 				/>
 			) : (
 				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-					{filteredClients.map((client) => {
-						const address = client.address
-							? [client.address.street, client.address.zipCode, client.address.city, client.address.country]
-									.filter(Boolean)
-									.join(", ")
-							: "";
-						return (
-							<Card key={client._id} className="p-4 flex flex-col justify-between">
-								<div>
-									<h3 className="font-semibold text-lg mb-1">{client.name}</h3>
-									<p className="text-sm text-gray-600">{client.email}</p>
-									<p className="text-sm text-gray-600">{client.phone}</p>
-									{address && <p className="text-sm text-gray-600">{address}</p>}
-								</div>
-								<div className="flex gap-2 mt-4">
-									  <Button variant="outline" size="sm" onClick={() => openEdit(client)}>Modifier</Button>
-																			<Button
-																				variant="secondary"
-																				size="sm"
-																				onClick={() => {
-																					if (typeof window !== 'undefined') {
-																						const event = new CustomEvent('open-invoice-modal', { detail: { clientId: client._id } });
-																						window.dispatchEvent(event);
-																					}
-																				}}
-																			>
-																				Nouvelle facture
-																			</Button>
-									  <Button variant="destructive" size="sm" onClick={() => handleDelete(client._id)}>
-										Supprimer
-									</Button>
-								</div>
-							</Card>
-						);
-					})}
+					{filteredClients.map((client) => (
+						<ClientCard
+							key={client._id}
+							client={client}
+							loading={loading}
+							onEdit={openEdit}
+							onDelete={handleDelete}
+							onNewInvoice={handleNewInvoice}
+						/>
+					))}
 				</div>
+			)}
+
+			{/* Modal modification client */}
+			{editClient && editForm && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+					<div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto mx-2">
+						<h2 className="text-lg font-bold mb-4">Modifier le client</h2>
+						<ClientForm
+							form={editForm}
+							onChange={handleEditChange}
+							onSubmit={handleEditSubmit}
+							loading={editLoading}
+							error={editError}
+							onCancel={closeEdit}
+							submitLabel="Enregistrer"
+							cancelLabel="Annuler"
+							isEdit
+						/>
+					</div>
+				</div>
+			)}
+
+			{/* Modal création facture */}
+			{invoiceModalOpen && selectedClientForInvoice && (
+				<InvoiceFormModal
+					open={invoiceModalOpen}
+					onClose={() => {
+						setInvoiceModalOpen(false);
+						setInvoiceFormError(null);
+					}}
+					onSubmit={handleInvoiceSubmit}
+					form={invoiceForm}
+					setForm={setInvoiceForm}
+					formError={invoiceFormError}
+					formLoading={invoiceFormLoading}
+					clients={clients.map(c => ({ _id: c._id, name: c.name }))}
+					editMode={false}
+					handleFormChange={handleInvoiceFormChange}
+				/>
 			)}
 			</div>
 		);

@@ -1,11 +1,13 @@
-import { NextAuthOptions } from 'next-auth';
+// NextAuth v5 config pour App Router uniquement
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
+import type { Account, User as NextAuthUser, Session } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import User from '@/models/User';
 import dbConnect from '@/lib/db/mongodb';
 
-export const authOptions: NextAuthOptions = {
+// (TypeScript infère le type automatiquement, pas besoin d'annotation explicite)
+export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -17,15 +19,20 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' }
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+      async authorize(
+        credentials: Partial<Record<'email' | 'password', unknown>>,
+        req: Request
+      ) {
+        const email = String(credentials?.email ?? '');
+        const password = String(credentials?.password ?? '');
+        if (!email || !password) {
           return null;
         }
 
         await dbConnect();
 
         const user = await User.findOne({
-          email: credentials.email.toLowerCase().trim(),
+          email: email.toLowerCase().trim(),
         }).select('+password firstName lastName companyName');
 
         if (!user || !user.password) {
@@ -33,7 +40,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
+          password,
           user.password
         );
 
@@ -57,10 +64,10 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+  async jwt({ token, user, account }: { token: any; user?: NextAuthUser; account?: Account }) {
       // Add user id on first sign in
       if (user) {
-        token.id = (user as any).id;
+        (token as any).id = (user as any).id;
       }
 
       // Handle Google sign-in: create or link user
@@ -96,14 +103,14 @@ export const authOptions: NextAuthOptions = {
           dbUser.emailVerified = new Date();
           await dbUser.save();
         }
-        token.id = dbUser._id.toString();
+        (token as any).id = dbUser._id.toString();
       }
 
       return token;
     },
-    async session({ session, token }) {
-      if (token?.id && session.user) {
-        (session.user as any).id = token.id as string;
+  async session({ session, token }: { session: Session; token: any }) {
+      if ((token as any)?.id && session.user) {
+        (session.user as any).id = (token as any).id as string;
       }
       return session;
     },

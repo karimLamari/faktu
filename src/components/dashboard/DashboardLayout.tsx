@@ -53,7 +53,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-          <div className="fixed inset-y-0 left-0 w-64 bg-white">
+          <div className="fixed inset-y-0 left-0 w-64 bg-white flex flex-col">
             <div className="flex items-center justify-between h-16 px-4 border-b">
               <span className="text-xl font-semibold">📄 FAKTU</span>
               <Button
@@ -64,7 +64,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            <nav className="mt-8">
+            <nav className="mt-8 flex-1 overflow-y-auto">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
@@ -85,6 +85,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 );
               })}
             </nav>
+            {/* Bouton de déconnexion pour mobile */}
+            <div className="p-4 border-t bg-white">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => {
+                  setSidebarOpen(false);
+                  signOut({ callbackUrl: '/' });
+                }}
+              >
+                <LogOut className="w-5 h-5 mr-3" />
+                Déconnexion
+              </Button>
+            </div>
           </div>
         </div>
       )}
