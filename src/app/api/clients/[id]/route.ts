@@ -1,24 +1,23 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/config';
+import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Client from '@/models/Client';
 import { clientSchema } from '@/lib/validations';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 
-
 // GET a single client by ID
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-  }
-  const { id } = params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return NextResponse.json({ error: 'ID de client invalide' }, { status: 400 });
-  }
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+    const { id } = await params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'ID de client invalide' }, { status: 400 });
+    }
     await dbConnect();
     const client = await Client.findOne({ _id: id, userId: session.user.id });
     if (!client) {
@@ -32,16 +31,16 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PATCH (update) a client by ID
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-  }
-  const { id } = params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return NextResponse.json({ error: 'ID de client invalide' }, { status: 400 });
-  }
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+    const { id } = await params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'ID de client invalide' }, { status: 400 });
+    }
     const body = await request.json();
     let validatedData;
     try {
@@ -69,7 +68,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
     return NextResponse.json(updatedClient, { status: 200 });
   } catch (error) {
-    console.error('Erreur lors de la mise à jour du client (catch):', error);
+    console.error('Erreur lors de la mise à jour du client:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json({
         error: 'Données invalides',
@@ -82,16 +81,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // DELETE a client by ID
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-  }
-  const { id } = params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return NextResponse.json({ error: 'ID de client invalide' }, { status: 400 });
-  }
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+    const { id } = await params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'ID de client invalide' }, { status: 400 });
+    }
     await dbConnect();
     const deletedClient = await Client.findOneAndDelete({ _id: id, userId: session.user.id });
     if (!deletedClient) {
