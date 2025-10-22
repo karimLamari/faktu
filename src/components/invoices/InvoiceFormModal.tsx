@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -82,7 +84,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+  <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-md max-h-[80vh] overflow-y-auto mx-2">
         <h2 className="text-lg font-bold mb-4">{editMode ? "Modifier la facture" : "Nouvelle facture"}</h2>
         <form onSubmit={onSubmit} className="space-y-3">
           <div>
@@ -246,6 +248,42 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
               rows={2}
             />
           </div>
+            {/* Statut et méthode de paiement */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-sm font-medium">Statut paiement</label>
+                <select
+                  className="w-full border rounded px-2 py-1"
+                  name="paymentStatus"
+                  value={form?.paymentStatus || "pending"}
+                  onChange={handleFormChange}
+                  required
+                >
+                  <option value="pending">En attente</option>
+                  <option value="paid">Payé</option>
+                  <option value="partially_paid">Partiellement payé</option>
+                  <option value="overdue">En retard</option>
+                  <option value="cancelled">Annulée</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Méthode de paiement</label>
+                <select
+                  className="w-full border rounded px-2 py-1"
+                  name="paymentMethod"
+                  value={form?.paymentMethod || "bank_transfer"}
+                  onChange={handleFormChange}
+                  required
+                >
+                  <option value="bank_transfer">Virement</option>
+                  <option value="check">Chèque</option>
+                  <option value="cash">Espèces</option>
+                  <option value="card">Carte</option>
+                  <option value="online">En ligne</option>
+                  <option value="other">Autre</option>
+                </select>
+              </div>
+            </div>
           {formError && <div className="text-red-600">{formError}</div>}
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="outline" onClick={onClose} disabled={formLoading}>Annuler</Button>

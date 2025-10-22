@@ -21,7 +21,12 @@ export async function POST(request: NextRequest) {
     } catch (zodErr) {
       console.error('Zod validation error:', zodErr);
       if (zodErr instanceof z.ZodError) {
-        return NextResponse.json({ error: 'Données invalides', details: zodErr.issues, body }, { status: 400 });
+        return NextResponse.json({
+          error: 'Données invalides',
+          errors: zodErr.issues.map((issue: any) => issue.message),
+          details: zodErr.issues,
+          body
+        }, { status: 400 });
       }
       throw zodErr;
     }
@@ -37,7 +42,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erreur lors de la création du client:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Données invalides', details: error.issues }, { status: 400 });
+      return NextResponse.json({
+        error: 'Données invalides',
+        errors: error.issues.map((issue: any) => issue.message),
+        details: error.issues
+      }, { status: 400 });
     }
     return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
   }

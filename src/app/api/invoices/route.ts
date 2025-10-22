@@ -38,7 +38,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(invoice, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Données invalides', details: error.issues }, { status: 400 });
+      return NextResponse.json({
+        error: 'Données invalides',
+        errors: error.issues.map((issue: any) => issue.message),
+        details: error.issues
+      }, { status: 400 });
     }
     console.error('Erreur création facture:', error);
     return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });

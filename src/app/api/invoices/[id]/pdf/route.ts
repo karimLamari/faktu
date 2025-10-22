@@ -17,9 +17,30 @@ function InvoiceHtml({ invoice, client, user }: any) {
         <span style="color: #666; font-size: 10px;">${item.details || ''}</span>
       </td>
       <td class="unit-price-column">${Number(item.unitPrice).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</td>
+      <td class="tva-column">${typeof item.taxRate === 'number' ? item.taxRate.toLocaleString('fr-FR', {minimumFractionDigits:1}) : '0.0'}%</td>
       <td class="total-column">${(item.quantity * item.unitPrice).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</td>
     </tr>
   `).join('');
+  // Regrouper les montants de TVA par taux
+  const tvaByRate: { [rate: number]: number } = {};
+  for (const item of invoice.items) {
+    const rate = typeof item.taxRate === 'number' ? item.taxRate : 0;
+    const base = item.quantity * item.unitPrice;
+    const tva = base * (rate / 100);
+    if (!tvaByRate[rate]) tvaByRate[rate] = 0;
+    tvaByRate[rate] += tva;
+  }
+
+  const tvaRows = Object.entries(tvaByRate)
+    .filter(([rate, amount]) => Number(amount) > 0)
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([rate, amount]) => `
+      <tr>
+        <td class="label">TVA (${Number(rate).toLocaleString('fr-FR', {minimumFractionDigits:1})}%):</td>
+        <td class="value">${Number(amount).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</td>
+      </tr>
+    `).join('');
+
   return `
     <!DOCTYPE html>
     <html lang=\"fr\">
@@ -260,10 +281,7 @@ function InvoiceHtml({ invoice, client, user }: any) {
                 ${client?.companyInfo?.siret ? `SIRET : ${client.companyInfo.siret}` : ''}
               </div>
             </div>
-            <div class="info-block">
-              <span class="info-label">&nbsp;</span>
-              <div class="info-content">&nbsp;</div>
-            </div>
+ 
           </div>
           <div class="items-section">
             <table class="items-table">
@@ -271,8 +289,9 @@ function InvoiceHtml({ invoice, client, user }: any) {
                 <tr>
                   <th class="qty-column">Qté</th>
                   <th class="description-column">Description</th>
-                  <th class="unit-price-column">Prix Unitaire HT</th>
-                  <th class="total-column">Montant HT</th>
+                  <th class="unit-price-column">PU HT</th>
+                  <th class="tva-column">TVA</th>
+                  <th class="total-column">Total HT</th>
                 </tr>
               </thead>
               <tbody>
@@ -286,19 +305,14 @@ function InvoiceHtml({ invoice, client, user }: any) {
                 <td class="label">Sous-total HT :</td>
                 <td class="value">${Number(invoice.subtotal).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</td>
               </tr>
-              <tr>
-                <td class="label">TVA (${invoice.taxRate ? invoice.taxRate.toFixed(1) : '0.0'}%) :</td>
-                <td class="value">${Number(invoice.taxAmount).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</td>
-              </tr>
+              ${tvaRows}
               <tr class="grand-total">
                 <td class="label">TOTAL TTC :</td>
                 <td class="value">${Number(invoice.total).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</td>
               </tr>
             </table>
           </div>
-          <div style="margin-bottom: 30px; padding: 15px; background: #f8f9fa; border-radius: 4px; font-size: 10px;">
-            <strong>Notes :</strong> ${invoice.notes || "Tous les prix sont en Euros. Facture payable dans les 30 jours suivant la date d'émission."}
-          </div>
+
           <div class="footer">
             <div class="payment-info">
               <div class="payment-terms">Modalités de paiement</div>

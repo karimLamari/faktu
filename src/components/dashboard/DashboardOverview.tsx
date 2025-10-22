@@ -23,8 +23,8 @@ export default function DashboardOverview() {
   }, []);
 
   // Calculs
-  const totalCA = invoices.filter(i => i.status === 'paid' || i.status === 'partially_paid').reduce((sum, i) => sum + (i.total || 0), 0);
-  const pendingCount = invoices.filter(i => i.status === 'sent' || i.status === 'pending' || i.status === 'overdue').length;
+  const totalCA = invoices.filter(i => i.paymentStatus === 'paid' || i.paymentStatus === 'partially_paid').reduce((sum, i) => sum + (i.total || 0), 0);
+  const pendingCount = invoices.filter(i => i.paymentStatus === 'pending' || i.paymentStatus === 'overdue').length;
   const lastInvoices = invoices.slice(0, 5);
 
   if (loading) {

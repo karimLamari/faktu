@@ -7,17 +7,14 @@ import { invoiceSchema } from '@/lib/validations';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 
-interface Params {
-  params: { id: string };
-}
 
 // GET a single invoice by ID
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
-  const { id } = params;
+  const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'ID de facture invalide' }, { status: 400 });
   }
@@ -35,14 +32,12 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 // PATCH (update) an invoice by ID
-export async function PATCH(request: NextRequest, context: any) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
-  // Correction Next.js App Router : params doit être await si async
-  const params = context?.params ? (typeof context.params.then === 'function' ? await context.params : context.params) : {};
-  const { id } = params;
+  const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'ID de facture invalide' }, { status: 400 });
   }
@@ -61,7 +56,11 @@ export async function PATCH(request: NextRequest, context: any) {
     return NextResponse.json(updatedInvoice, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Données invalides', details: error.issues }, { status: 400 });
+      return NextResponse.json({
+        error: 'Données invalides',
+        errors: error.issues.map((issue: any) => issue.message),
+        details: error.issues
+      }, { status: 400 });
     }
     console.error('Erreur mise à jour facture:', error);
     return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
@@ -69,12 +68,12 @@ export async function PATCH(request: NextRequest, context: any) {
 }
 
 // DELETE an invoice by ID
-export async function DELETE(request: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
-  const { id } = params;
+  const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'ID de facture invalide' }, { status: 400 });
   }

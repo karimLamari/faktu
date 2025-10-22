@@ -24,7 +24,22 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
   const data = await req.json();
+  let validatedData;
+  try {
+    // Autoriser la mise à jour partielle
+    validatedData = require('@/lib/validations').userSchema.partial().parse(data);
+  } catch (zodErr) {
+    const { ZodError } = require('zod');
+    if (zodErr instanceof ZodError) {
+      return NextResponse.json({
+        error: 'Données invalides',
+        errors: (zodErr as import('zod').ZodError).issues.map((issue: any) => issue.message),
+        details: (zodErr as import('zod').ZodError).issues
+      }, { status: 400 });
+    }
+    throw zodErr;
+  }
   await dbConnect();
-  await User.findByIdAndUpdate(session.user.id, data);
+  await User.findByIdAndUpdate(session.user.id, validatedData);
   return NextResponse.json({ success: true });
 }

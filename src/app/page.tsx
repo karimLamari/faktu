@@ -9,7 +9,7 @@ export default function HomePage() {
       <header className="border-b bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="text-2xl font-bold text-gray-900">
-            📄 Invoice App
+            📄 FAKTU
           </div>
           <div className="space-x-2">
             <Button variant="ghost" asChild>
@@ -146,7 +146,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t bg-white mt-16">
         <div className="container mx-auto px-4 py-8 text-center text-gray-600">
-          <p>&copy; 2024 Invoice App. Tous droits réservés.</p>
+          <p>&copy; 2025 FAKTU. Tous droits réservés.</p>
         </div>
       </footer>
     </div>

@@ -117,30 +117,32 @@ const ClientForm: React.FC<ClientFormProps> = ({
         placeholder="Pays"
       />
     </div>
-    <div>
-      <label className="block text-sm font-medium">Société (optionnel)</label>
-      <input
-        className="w-full border rounded px-2 py-1 mb-1"
-        name="companyInfo.legalName"
-        value={form.companyInfo?.legalName || ""}
-        onChange={onChange}
-        placeholder="Raison sociale"
-      />
-      <input
-        className="w-full border rounded px-2 py-1 mb-1"
-        name="companyInfo.siret"
-        value={form.companyInfo?.siret || ""}
-        onChange={onChange}
-        placeholder="SIRET"
-      />
-      <input
-        className="w-full border rounded px-2 py-1"
-        name="companyInfo.vatNumber"
-        value={form.companyInfo?.vatNumber || ""}
-        onChange={onChange}
-        placeholder="N° TVA"
-      />
-    </div>
+    {form.type === 'business' && (
+      <div>
+        <label className="block text-sm font-medium">Société (optionnel)</label>
+        <input
+          className="w-full border rounded px-2 py-1 mb-1"
+          name="companyInfo.legalName"
+          value={form.companyInfo?.legalName || ""}
+          onChange={onChange}
+          placeholder="Raison sociale"
+        />
+        <input
+          className="w-full border rounded px-2 py-1 mb-1"
+          name="companyInfo.siret"
+          value={form.companyInfo?.siret || ""}
+          onChange={onChange}
+          placeholder="SIRET"
+        />
+        <input
+          className="w-full border rounded px-2 py-1"
+          name="companyInfo.vatNumber"
+          value={form.companyInfo?.vatNumber || ""}
+          onChange={onChange}
+          placeholder="N° TVA"
+        />
+      </div>
+    )}
     <div>
       <label className="block text-sm font-medium">Conditions de paiement (jours)</label>
       <input

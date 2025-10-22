@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gestion de Factures - Invoice App",
+  title: "Gestion de Factures -FAKTU",
   description: "Application complète de gestion de factures pour freelances et petites entreprises",
 };
 

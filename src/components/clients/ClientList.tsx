@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import ClientForm from "./ClientForm";
 import { z } from "zod";
 import { clientSchema } from "@/lib/validations";
+import { EmptyStateButton } from "../ui/EmptyStateButton";
 
 
 type ClientListProps = {
@@ -150,12 +151,19 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(addForm),
 				});
+				const data = await res.json();
 				if (!res.ok) {
-					const data = await res.json();
-					throw new Error(data.error || 'Erreur lors de la création');
+					// Affiche les erreurs Zod détaillées si présentes
+					if (data && data.errors && Array.isArray(data.errors)) {
+						setAddError(data.errors.map((err: any) => err.message).join(' | '));
+					} else if (data.error) {
+						setAddError(data.error);
+					} else {
+						setAddError('Erreur lors de la création');
+					}
+					return;
 				}
-				const created = await res.json();
-				setClients((prev) => [created, ...prev]);
+				setClients((prev) => [data, ...prev]);
 				setNotif('Client ajouté avec succès.');
 				closeAdd();
 			} catch (e: any) {
@@ -168,22 +176,24 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 
 		return (
 			<div className="space-y-6">
-				<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-					<h2 className="text-xl font-bold">Clients</h2>
-					<div className="flex gap-2">
-						<Input
-							placeholder="Rechercher un client..."
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							className="max-w-xs"
-						/>
-						<Button onClick={openAdd} variant="default">Ajouter un client</Button>
+				{filteredClients.length > 0 && (
+					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+						<h2 className="text-xl font-bold">Clients</h2>
+						<div className="flex gap-2">
+							<Input
+								placeholder="Rechercher un client..."
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								className="max-w-xs"
+							/>
+							<Button onClick={openAdd} variant="default">Ajouter un client</Button>
+						</div>
 					</div>
-				</div>
+				)}
 				{/* Modal ajout client */}
 				{addOpen && (
 					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-						<div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
+						<div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto mx-2">
 							<h2 className="text-lg font-bold mb-4">Ajouter un client</h2>
 							<ClientForm
 								form={addForm}
@@ -200,59 +210,54 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 				)}
 			{notif && <div className="text-green-600 font-medium">{notif}</div>}
 			{error && <div className="text-red-600 font-medium">{error}</div>}
-			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-				{filteredClients.map((client) => {
-					const address = client.address
-						? [client.address.street, client.address.zipCode, client.address.city, client.address.country]
-								.filter(Boolean)
-								.join(", ")
-						: "";
-					return (
-						<Card key={client._id} className="p-4 flex flex-col justify-between">
-							<div>
-								<h3 className="font-semibold text-lg mb-1">{client.name}</h3>
-								<p className="text-sm text-gray-600">{client.email}</p>
-								<p className="text-sm text-gray-600">{client.phone}</p>
-								{address && <p className="text-sm text-gray-600">{address}</p>}
-							</div>
-							<div className="flex gap-2 mt-4">
-								<Button variant="outline" size="sm" onClick={() => openEdit(client)} disabled={loading}>Modifier</Button>
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={() => window.location.href = `/dashboard/invoices/new?clientId=${client._id}`}
-								>
-									Nouvelle facture
-								</Button>
-			{/* Modal d'édition */}
-			{editClient && editForm && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-					<div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
-						<h2 className="text-lg font-bold mb-4">Modifier le client</h2>
-						<ClientForm
-							form={editForm}
-							onChange={handleEditChange}
-							onSubmit={handleEditSubmit}
-							loading={editLoading}
-							error={editError}
-							onCancel={closeEdit}
-							submitLabel="Enregistrer"
-							cancelLabel="Annuler"
-							isEdit
-						/>
-					</div>
+			{filteredClients.length === 0 ? (
+				<EmptyStateButton
+					label="Ajouter un client"
+					onClick={openAdd}
+					color="green"
+					description="Aucun client pour l'instant. Ajoutez-en un pour commencer !"
+				/>
+			) : (
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+					{filteredClients.map((client) => {
+						const address = client.address
+							? [client.address.street, client.address.zipCode, client.address.city, client.address.country]
+									.filter(Boolean)
+									.join(", ")
+							: "";
+						return (
+							<Card key={client._id} className="p-4 flex flex-col justify-between">
+								<div>
+									<h3 className="font-semibold text-lg mb-1">{client.name}</h3>
+									<p className="text-sm text-gray-600">{client.email}</p>
+									<p className="text-sm text-gray-600">{client.phone}</p>
+									{address && <p className="text-sm text-gray-600">{address}</p>}
+								</div>
+								<div className="flex gap-2 mt-4">
+									  <Button variant="outline" size="sm" onClick={() => openEdit(client)}>Modifier</Button>
+																			<Button
+																				variant="secondary"
+																				size="sm"
+																				onClick={() => {
+																					if (typeof window !== 'undefined') {
+																						const event = new CustomEvent('open-invoice-modal', { detail: { clientId: client._id } });
+																						window.dispatchEvent(event);
+																					}
+																				}}
+																			>
+																				Nouvelle facture
+																			</Button>
+									  <Button variant="destructive" size="sm" onClick={() => handleDelete(client._id)}>
+										Supprimer
+									</Button>
+								</div>
+							</Card>
+						);
+					})}
 				</div>
 			)}
-								<Button variant="destructive" size="sm" onClick={() => handleDelete(client._id)} disabled={loading}>
-									Supprimer
-								</Button>
-							</div>
-						</Card>
-					);
-				})}
 			</div>
-		</div>
-	);
-};
+		);
+	};
 
 export default ClientList;

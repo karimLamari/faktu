@@ -4,6 +4,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { invoiceSchema } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
+import { EmptyStateButton } from "@/components/ui/EmptyStateButton";
 import { Table } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,26 @@ export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [editInvoice, setEditInvoice] = useState<IInvoice | null>(null);
+
+  // Listener pour ouverture modale depuis ClientList
+  useState(() => {
+    if (typeof window === 'undefined') return;
+    const handler = (e: any) => {
+      const clientId = e.detail?.clientId || clients[0]?._id || "";
+      setForm({
+        clientId,
+        issueDate: new Date().toISOString().slice(0, 10),
+        dueDate: new Date().toISOString().slice(0, 10),
+        items: [],
+        status: "draft",
+      });
+      setEditInvoice(null);
+      setFormError(null);
+      setShowForm(true);
+    };
+    window.addEventListener('open-invoice-modal', handler);
+    return () => window.removeEventListener('open-invoice-modal', handler);
+  });
 
   const openNew = () => {
     setForm({
@@ -109,41 +130,69 @@ export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
 
   return (
     <div>
-      <Button onClick={openNew} className="mb-4">Nouvelle facture</Button>
-      {notif && <div className="mb-2 text-green-600">{notif}</div>}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {invoices
-          .filter((inv) => {
-            if (!search) return true;
-            const client = clients.find((c) => c._id.toString() === inv.clientId?.toString());
-            const clientName = client?.companyInfo?.legalName || client?.name || "";
-            return (
-              inv.invoiceNumber?.toLowerCase().includes(search.toLowerCase()) ||
-              clientName.toLowerCase().includes(search.toLowerCase())
-            );
-          })
-          .map((inv) => {
-            const client = clients.find((c) => c._id.toString() === inv.clientId?.toString());
-            const clientName = client?.companyInfo?.legalName || client?.name || "";
-            return (
-              <Card key={inv._id?.toString() || inv.invoiceNumber} className="p-4 flex flex-col justify-between">
-                <div>
-                  <h3 className="font-semibold text-lg mb-1">{inv.invoiceNumber}</h3>
-                  <p className="text-sm text-gray-600">Client : {clientName}</p>
-                  <p className="text-sm text-gray-600">Date : {inv.issueDate ? new Date(inv.issueDate).toLocaleDateString() : ""}</p>
-                  <p className="text-sm text-gray-600">Montant : {inv.total?.toFixed(2) || ""} €</p>
-                  <p className="text-sm text-gray-600">Échéance : {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : ""}</p>
-                  <Badge className={statusColors[inv.status] || "bg-gray-100 text-gray-800"}>{inv.status}</Badge>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Button size="sm" variant="outline" onClick={() => openEdit(inv)}>Modifier</Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(inv._id?.toString() || "")}>Supprimer</Button>
-                  <Button size="sm" variant="outline" onClick={() => handleExportPDF(inv._id?.toString() || "")}>PDF</Button>
-                </div>
-              </Card>
-            );
-          })}
-      </div>
+      {invoices.length === 0 ? (
+        <EmptyStateButton
+          label="Nouvelle facture"
+          onClick={openNew}
+          color="blue"
+          description="Aucune facture pour l'instant. Créez-en une pour commencer !"
+        />
+      ) : (
+        <div>
+          <Button onClick={openNew} className="mb-4">Nouvelle facture</Button>
+          {notif && <div className="mb-2 text-green-600">{notif}</div>}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {invoices
+              .filter((inv) => {
+                if (!search) return true;
+                const client = clients.find((c) => c._id.toString() === inv.clientId?.toString());
+                const clientName = client?.companyInfo?.legalName || client?.name || "";
+                return (
+                  inv.invoiceNumber?.toLowerCase().includes(search.toLowerCase()) ||
+                  clientName.toLowerCase().includes(search.toLowerCase())
+                );
+              })
+              .map((inv) => {
+                const client = clients.find((c) => c._id.toString() === inv.clientId?.toString());
+                const clientName = client?.companyInfo?.legalName || client?.name || "";
+                return (
+                  <Card key={inv._id?.toString() || inv.invoiceNumber} className="p-4 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">{inv.invoiceNumber}</h3>
+                      <p className="text-sm text-gray-600">Client : {clientName}</p>
+                      <p className="text-sm text-gray-600">Date : {inv.issueDate ? new Date(inv.issueDate).toLocaleDateString() : ""}</p>
+                      <p className="text-sm text-gray-600">Montant : {inv.total?.toFixed(2) || ""} €</p>
+                      <p className="text-sm text-gray-600">Échéance : {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : ""}</p>
+                      <Badge className={statusColors[inv.status] || "bg-gray-100 text-gray-800"}>{inv.status}</Badge>
+                        <div className="mt-2">
+                          <span className="text-xs text-gray-500">Statut paiement : <span className="font-semibold">{inv.paymentStatus}</span></span>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button size="sm" variant="outline" onClick={() => openEdit(inv)}>Modifier</Button>
+                      <Button size="sm" variant="destructive" onClick={async () => {
+                        if (!inv._id) return;
+                        if (!window.confirm("Supprimer cette facture ?")) return;
+                        try {
+                          const res = await fetch(`/api/invoices/${inv._id}`, { method: "DELETE" });
+                          if (!res.ok) {
+                            const data = await res.json();
+                            throw new Error(data.error || "Erreur lors de la suppression");
+                          }
+                          setInvoices((prev) => prev.filter((i) => i._id !== inv._id));
+                          setNotif("Facture supprimée avec succès.");
+                        } catch (e: any) {
+                          alert(e.message || "Erreur inconnue lors de la suppression");
+                        }
+                      }}>Supprimer</Button>
+                      <Button size="sm" variant="outline" onClick={() => handleExportPDF(inv._id?.toString() || "")}>PDF</Button>
+                    </div>
+                  </Card>
+                );
+              })}
+          </div>
+        </div>
+      )}
       <InvoiceFormModal
         open={showForm}
         onClose={closeForm}
@@ -156,15 +205,13 @@ export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
         editMode={!!editInvoice}
         handleFormChange={handleFormChange}
       />
+        {/* Ajout des champs paymentStatus et paymentMethod dans le formulaire modal */}
     </div>
   );
 }
 
 // Helper functions must be after the InvoiceList component
-export function handleDelete(id: string) {
-  // TODO: implement invoice deletion
-  alert(`Suppression de la facture ${id} (à implémenter)`);
-}
+
 
 export function handleExportPDF(id: string) {
   // Ouvre le PDF dans un nouvel onglet

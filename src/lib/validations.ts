@@ -38,7 +38,7 @@ export const clientSchema = z
     companyInfo: z
       .object({
         legalName: z.string().optional(),
-        siret: z.string().regex(/^[0-9]{14}$/).optional(),
+        siret: z.string().optional(),
         vatNumber: z.string().optional(),
       })
       .optional(),
@@ -59,7 +59,7 @@ export const clientSchema = z
     isActive: z.boolean().optional(),
   })
   .superRefine((val, ctx) => {
-    // If business, require companyInfo.legalName
+    // Si business, legalName et siret sont requis et validés
     if (val.type === 'business') {
       if (!val.companyInfo || !val.companyInfo.legalName || val.companyInfo.legalName.trim() === '') {
         ctx.addIssue({
@@ -68,7 +68,15 @@ export const clientSchema = z
           message: 'Raison sociale requise pour les entreprises',
         });
       }
+      if (!val.companyInfo || !val.companyInfo.siret || !/^[0-9]{14}$/.test(val.companyInfo.siret)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['companyInfo', 'siret'],
+          message: 'SIRET requis et doit comporter 14 chiffres pour les entreprises',
+        });
+      }
     }
+    // Si particulier, ne pas valider siret ou legalName
   });
 
 

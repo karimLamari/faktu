@@ -1,4 +1,24 @@
 # Plan d'actions restants - Application de facturation freelance
+[Sauvegarde de l'état au 22/10/2025]
+
+## Fonctionnalités terminées
+- CRUD clients/invoices complet
+- Feedback utilisateur et validation Zod
+- Dashboard dynamique et édition du profil
+- Génération PDF professionnelle (multi-taux TVA, colonne TVA, noms de colonnes clairs)
+- Modèles alignés (Invoice, Client, User)
+
+## Fonctionnalités en cours
+- Personnalisation avancée du PDF
+- Sélection de template PDF
+- Centralisation des erreurs et chargements
+
+## Fonctionnalités à venir
+- Envoi par email (Resend)
+- Gestion des paiements
+- Pagination clients
+- CRUD templates
+- Export, dark mode, a11y, mobile UX
 
 ## 1. Fonctionnalités à finaliser
 
