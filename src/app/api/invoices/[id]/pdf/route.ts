@@ -232,7 +232,7 @@ function InvoiceHtml({ invoice, client, user }: any) {
           .payment-terms {
             font-weight: 600;
             color: #2c5aa0;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
           }
