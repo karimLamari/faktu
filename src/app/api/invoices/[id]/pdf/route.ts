@@ -266,7 +266,7 @@ function InvoiceHtml({ invoice, client, user }: any) {
               <div class="company-details">
                 ${user?.address?.street || ''}<br/>
                 ${user?.address?.zipCode || ''} ${user?.address?.city || ''}<br/>
-                ${user?.companyInfo?.siret ? `SIRET : ${user.companyInfo.siret}<br/>` : ''}
+                ${user?.siret ? `SIRET : ${user.siret}<br/>` : ''}
                 ${user?.email || ''}${user?.phone ? ' · ' + user.phone : ''}
               </div>
             </div>

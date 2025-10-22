@@ -9,8 +9,16 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    // Nettoyer les chaînes vides pour les champs optionnels
+    const cleanedBody = {
+      ...body,
+      siret: body.siret?.trim() || undefined,
+      phone: body.phone?.trim() || undefined,
+      logo: body.logo?.trim() || undefined,
+    };
+    
     // Validation des données
-    const validatedData = userSchema.parse(body);
+    const validatedData = userSchema.parse(cleanedBody);
     
     await dbConnect();
     

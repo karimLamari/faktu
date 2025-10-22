@@ -59,9 +59,7 @@ export default function HomePage() {
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
               Tout ce dont vous avez besoin
             </h2>
-            <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-4">
-              Découvrez nos fonctionnalités en 3D
-            </p>
+
           </div>
           
           {/* Carrousel 3D centré et responsive */}

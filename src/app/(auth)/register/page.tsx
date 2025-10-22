@@ -119,6 +119,19 @@ export default function RegisterPage() {
               {errors.legalForm && <p className="text-sm text-red-600">{errors.legalForm}</p>}
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="siret">SIRET (optionnel)</Label>
+              <Input 
+                id="siret" 
+                value={formData.siret || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, siret: e.target.value }))} 
+                disabled={isLoading}
+                placeholder="14 chiffres"
+                maxLength={14}
+              />
+              {errors.siret && <p className="text-sm text-red-600">{errors.siret}</p>}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="street">Adresse</Label>
