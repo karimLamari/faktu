@@ -5,14 +5,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: faktu-app
+    container_name: faktu-invoice-app
     restart: unless-stopped
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env.production
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      # 🔥 LES VARIABLES SENSIBLES SERONT AJOUTÉES DANS PORTAINER
+      - MONGODB_URI
+      - JWT_SECRET
+      - RESEND_API_KEY
     networks:
-      - faktu-network
+      - proxy-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
@@ -21,5 +24,5 @@ services:
       start_period: 40s
 
 networks:
-  faktu-network:
-    driver: bridge
+  proxy-network:
+    external: true
