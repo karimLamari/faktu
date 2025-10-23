@@ -8,6 +8,7 @@ import dbConnect from '@/lib/db/mongodb';
 
 // (TypeScript infère le type automatiquement, pas besoin d'annotation explicite)
 export const authOptions = {
+    trustHost: true, 
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
