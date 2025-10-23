@@ -42,13 +42,13 @@ export default function HomePage() {
             Parfait pour les freelances et petites entreprises.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Button size="lg" asChild className="bg-indigo-600 hover:bg-blue-700 text-lg px-10 py-6 font-semibold shadow-lg">
+            <Button size="lg" asChild className="bg-indigo-600 hover:bg-blue-700 text-lg px-6 sm:px-10 py-6 font-semibold shadow-lg w-full sm:w-auto">
               <Link href="/register">
                 Commencer gratuitement
                 <span className="ml-2">→</span>
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild className="text-lg px-10 py-6 border-2 border-gray-300 hover:bg-gray-50 font-medium">
+            <Button size="lg" variant="outline" asChild className="text-lg px-6 sm:px-10 py-6 border-2 border-gray-300 hover:bg-gray-50 font-medium w-full sm:w-auto">
               <Link href="/login">Se connecter</Link>
             </Button>
           </div>
@@ -91,15 +91,15 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* CTA Section */}
-        <div className="text-center bg-white rounded-2xl p-12 shadow-lg border border-gray-200">
+        {/* CTA Section - Sans effet card */}
+        <div className="text-center bg-transparent rounded-2xl p-6 sm:p-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Prêt à commencer ?
           </h2>
           <p className="text-lg text-gray-600 mb-8 max-w-xl mx-auto">
             Rejoignez des milliers d'entrepreneurs qui simplifient leur gestion de factures.
           </p>
-          <Button size="lg" asChild className="bg-indigo-600 hover:bg-blue-700 px-10 py-6 text-lg font-semibold shadow-lg">
+          <Button size="lg" asChild className="bg-indigo-600 hover:bg-blue-700 px-6 sm:px-10 py-6 text-lg font-semibold shadow-lg w-full sm:w-auto">
             <Link href="/register">Créer mon compte gratuit →</Link>
           </Button>
         </div>
