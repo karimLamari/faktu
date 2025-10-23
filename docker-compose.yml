@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: faktu-invoice-app
+    container_name: faktu-app
     restart: unless-stopped
     ports:
       - "3000:3000"
