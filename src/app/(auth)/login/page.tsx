@@ -59,12 +59,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
-          <CardDescription>
-            Connectez-vous à votre compte de gestion de factures
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+      <Card className="w-full max-w-md shadow-lg border-gray-200">
+        <CardHeader className="text-center space-y-3 pb-6">
+          <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl mx-auto shadow-md">
+            F
+          </div>
+          <CardTitle className="text-2xl font-bold text-gray-900">Connexion</CardTitle>
+          <CardDescription className="text-gray-600">
+            Connectez-vous à votre compte FAKTU
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -97,33 +100,33 @@ export default function LoginPage() {
               <p className="text-sm text-red-600 text-center">{errors.general}</p>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-indigo-600 hover:bg-blue-700 font-semibold shadow-md" disabled={isLoading}>
               {isLoading ? 'Connexion...' : 'Se connecter'}
             </Button>
           </form>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-muted-foreground">Ou</span>
+              <span className="bg-white px-3 text-gray-500 font-medium">Ou</span>
             </div>
           </div>
 
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full border-gray-300 hover:bg-gray-50 font-medium"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
           >
             Continuer avec Google
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-gray-600">
             Pas encore de compte ?{' '}
-            <Link href="/register" className="text-primary hover:underline">
+            <Link href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">
               S'inscrire
             </Link>
           </p>

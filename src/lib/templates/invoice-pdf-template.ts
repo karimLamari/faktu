@@ -1,14 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import dbConnect from '@/lib/db/mongodb';
-import Invoice from '@/models/Invoice';
-import Client from '@/models/Client';
-import User from '@/models/User';
-import puppeteer from 'puppeteer';
-import { InvoiceHtml } from '@/lib/templates/invoice-pdf-template';
+/**
+ * Template HTML pour la génération PDF de facture
+ * Utilisé pour les téléchargements PDF et les pièces jointes email
+ */
 
-// DEPRECATED: Fonction déplacée vers @/lib/templates/invoice-pdf-template
-function InvoiceHtml_DEPRECATED({ invoice, client, user }: any) {
+interface InvoiceHtmlProps {
+  invoice: any;
+  client: any;
+  user: any;
+}
+
+export function InvoiceHtml({ invoice, client, user }: InvoiceHtmlProps): string {
   const itemsRows = invoice.items.map((item: any) => `
     <tr>
       <td class="qty-column">${item.quantity}</td>
@@ -21,6 +22,7 @@ function InvoiceHtml_DEPRECATED({ invoice, client, user }: any) {
       <td class="total-column">${(item.quantity * item.unitPrice).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</td>
     </tr>
   `).join('');
+  
   // Regrouper les montants de TVA par taux
   const tvaByRate: { [rate: number]: number } = {};
   for (const item of invoice.items) {
@@ -288,7 +290,6 @@ function InvoiceHtml_DEPRECATED({ invoice, client, user }: any) {
                 ${client?.companyInfo?.siret ? `SIRET : ${client.companyInfo.siret}` : ''}
               </div>
             </div>
- 
           </div>
           <div class="items-section">
             <table class="items-table">
@@ -340,40 +341,4 @@ function InvoiceHtml_DEPRECATED({ invoice, client, user }: any) {
       </body>
     </html>
   `;
-}
-
-
-export async function GET(request: NextRequest, context: any) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-  }
-  // Correction Next.js App Router : params doit être await si async
-  const params = context?.params ? (typeof context.params.then === 'function' ? await context.params : context.params) : {};
-  const { id } = params;
-  await dbConnect();
-  const invoice = await Invoice.findOne({ _id: id, userId: session.user.id });
-  if (!invoice) {
-    return NextResponse.json({ error: 'Facture non trouvée' }, { status: 404 });
-  }
-  const client = await Client.findById(invoice.clientId);
-  const user = await User.findById(invoice.userId);
-
-  // Générer le HTML
-  const html = InvoiceHtml({ invoice, client, user });
-
-  // Puppeteer : générer le PDF
-  const browser = await puppeteer.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: 'networkidle0' });
-  const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-  await browser.close();
-
-  return new NextResponse(Buffer.from(pdfBuffer), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="facture-${invoice.invoiceNumber}.pdf"`,
-    },
-  });
 }

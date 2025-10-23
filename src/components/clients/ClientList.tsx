@@ -256,41 +256,79 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 		};
 
 		return (
-			<div className="space-y-6">
-				{filteredClients.length > 0 && (
-					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-						<h2 className="text-xl font-bold">Clients</h2>
-						<div className="flex gap-2">
-							<Input
-								placeholder="Rechercher un client..."
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-								className="max-w-xs"
-							/>
-							<Button onClick={openAdd} variant="default">Ajouter un client</Button>
+			<div className="space-y-6 animate-fade-in">
+				{/* Header amélioré */}
+				<div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+						<div>
+							<h1 className="text-3xl font-bold text-gray-900 mb-2">Clients</h1>
+							<p className="text-gray-600">
+								{filteredClients.length} client{filteredClients.length > 1 ? 's' : ''} 
+								{search && ` • Recherche: "${search}"`}
+							</p>
 						</div>
+						<Button 
+							onClick={openAdd} 
+							className="rounded-xl h-12 bg-green-600 hover:bg-green-700 shadow-md"
+						>
+							<span className="text-lg mr-2">+</span>
+							Nouveau client
+						</Button>
 					</div>
-				)}
+					
+					{/* Barre de recherche */}
+					<div className="mt-4">
+						<Input
+							placeholder="🔍 Rechercher par nom..."
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							className="h-12 rounded-xl border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+						/>
+					</div>
+				</div>
 				{/* Modal ajout client */}
 				{addOpen && (
-					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-						<div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto mx-2">
-							<h2 className="text-lg font-bold mb-4">Ajouter un client</h2>
-							<ClientForm
-								form={addForm}
-								onChange={handleAddChange}
-								onSubmit={handleAddSubmit}
-								loading={addLoading}
-								error={addError}
-								onCancel={closeAdd}
-								submitLabel="Ajouter"
-								cancelLabel="Annuler"
-							/>
+					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
+						<div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-slide-in-up">
+							{/* Header modal */}
+							<div className="bg-green-600 p-6 text-white">
+								<h2 className="text-2xl font-bold">Nouveau client</h2>
+								<p className="text-sm text-green-100">Ajoutez un nouveau client à votre base</p>
+							</div>
+							
+							{/* Body modal */}
+							<div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+								<ClientForm
+									form={addForm}
+									onChange={handleAddChange}
+									onSubmit={handleAddSubmit}
+									loading={addLoading}
+									error={addError}
+									onCancel={closeAdd}
+									submitLabel="Ajouter le client"
+									cancelLabel="Annuler"
+								/>
+							</div>
 						</div>
 					</div>
 				)}
-			{notif && <div className="text-green-600 font-medium">{notif}</div>}
-			{error && <div className="text-red-600 font-medium">{error}</div>}
+			{/* Notifications */}
+			{notif && (
+				<div className="fixed top-4 right-4 z-50 animate-slide-in-up">
+					<div className="bg-green-50 border-2 border-green-500 text-green-800 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3">
+						<div className="w-2 h-2 rounded-full bg-green-500 animate-pulse-subtle" />
+						<span className="font-semibold">{notif}</span>
+					</div>
+				</div>
+			)}
+			{error && (
+				<div className="fixed top-4 right-4 z-50 animate-slide-in-up">
+					<div className="bg-red-50 border-2 border-red-500 text-red-800 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3">
+						<div className="w-2 h-2 rounded-full bg-red-500 animate-pulse-subtle" />
+						<span className="font-semibold">{error}</span>
+					</div>
+				</div>
+			)}
 			
 			{filteredClients.length === 0 ? (
 				<EmptyStateButton
@@ -316,20 +354,28 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 
 			{/* Modal modification client */}
 			{editClient && editForm && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-					<div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto mx-2">
-						<h2 className="text-lg font-bold mb-4">Modifier le client</h2>
-						<ClientForm
-							form={editForm}
-							onChange={handleEditChange}
-							onSubmit={handleEditSubmit}
-							loading={editLoading}
-							error={editError}
-							onCancel={closeEdit}
-							submitLabel="Enregistrer"
-							cancelLabel="Annuler"
-							isEdit
-						/>
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
+					<div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-slide-in-up">
+						{/* Header modal */}
+						<div className="bg-blue-600 p-6 text-white">
+							<h2 className="text-2xl font-bold">Modifier le client</h2>
+							<p className="text-sm text-blue-100">Mettez à jour les informations du client</p>
+						</div>
+						
+						{/* Body modal */}
+						<div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+							<ClientForm
+								form={editForm}
+								onChange={handleEditChange}
+								onSubmit={handleEditSubmit}
+								loading={editLoading}
+								error={editError}
+								onCancel={closeEdit}
+								submitLabel="Enregistrer les modifications"
+								cancelLabel="Annuler"
+								isEdit
+							/>
+						</div>
 					</div>
 				</div>
 			)}

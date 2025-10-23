@@ -48,7 +48,17 @@ export async function GET(request: NextRequest) {
   }
   try {
     await dbConnect();
-    const invoices = await Invoice.find({ userId: session.user.id }).sort({ createdAt: -1 });
+    
+    // Support du filtre par clientId
+    const { searchParams } = new URL(request.url);
+    const clientId = searchParams.get('clientId');
+    
+    const filter: any = { userId: session.user.id };
+    if (clientId) {
+      filter.clientId = clientId;
+    }
+    
+    const invoices = await Invoice.find(filter).sort({ createdAt: -1 });
     return NextResponse.json(invoices, { status: 200 });
   } catch (error) {
     console.error('Erreur lors de la récupération des factures:', error);

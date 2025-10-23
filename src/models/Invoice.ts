@@ -8,6 +8,13 @@ export interface IInvoiceItem {
   unit: 'unit' | 'hour' | 'day' | 'month' | 'kg';
 }
 
+export interface IReminder {
+  sentAt: Date;
+  sentBy?: string;
+  type: 'friendly' | 'firm' | 'final';
+  customMessage?: string;
+}
+
 export interface IInvoice extends Document {
   userId: mongoose.Types.ObjectId;
   clientId: mongoose.Types.ObjectId;
@@ -17,6 +24,7 @@ export interface IInvoice extends Document {
   dueDate: Date;
   paymentDate?: Date;
   sentAt?: Date;
+  reminders: IReminder[];
   items: IInvoiceItem[];
   subtotal: number;
   taxAmount: number;
@@ -42,6 +50,13 @@ const InvoiceItemSchema = new Schema<IInvoiceItem>({
   unit: { type: String, default: 'unit', enum: ['unit', 'hour', 'day', 'month', 'kg'] },
 }, { _id: false });
 
+const ReminderSchema = new Schema<IReminder>({
+  sentAt: { type: Date, required: true, default: Date.now },
+  sentBy: { type: String },
+  type: { type: String, enum: ['friendly', 'firm', 'final'], required: true },
+  customMessage: { type: String },
+}, { _id: false });
+
 const InvoiceSchema = new Schema<IInvoice>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   clientId: { type: Schema.Types.ObjectId, ref: 'Client', required: true },
@@ -55,6 +70,7 @@ const InvoiceSchema = new Schema<IInvoice>({
   dueDate: { type: Date, required: true },
   paymentDate: { type: Date },
   sentAt: { type: Date },
+  reminders: { type: [ReminderSchema], default: [] },
   items: { type: [InvoiceItemSchema], required: true },
   subtotal: { type: Number, required: true, min: 0 },
   taxAmount: { type: Number, required: true, min: 0 },

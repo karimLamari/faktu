@@ -5,18 +5,21 @@ import InvoiceCarousel3D from '@/components/ui/InvoiceCarousel3D';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            📄 FAKTU
+      <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-5 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md">
+              F
+            </div>
+            <span className="text-2xl font-bold text-gray-900">FAKTU</span>
           </div>
-          <div className="space-x-2">
-            <Button variant="ghost" asChild>
+          <div className="flex gap-3">
+            <Button variant="ghost" asChild className="font-medium">
               <Link href="/login">Connexion</Link>
             </Button>
-            <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+            <Button asChild className="bg-indigo-600 hover:bg-blue-700 font-semibold shadow-md">
               <Link href="/register">S'inscrire</Link>
             </Button>
           </div>
@@ -24,71 +27,94 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <main className="container mx-auto px-4 py-16">
-        <div className="text-center mb-20">
-          <div className="inline-block mb-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-            ✨ Solution de facturation moderne
+      <main className="container mx-auto px-4 py-20">
+        <div className="text-center mb-24">
+          <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-semibold border border-blue-200">
+            <span className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></span>
+            Solution de facturation moderne
           </div>
-          <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            Gérez vos factures en toute
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> simplicité</span>
+          <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
+            Gérez vos factures<br />
+            <span className="text-blue-600">en toute simplicité</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 mb-10 leading-relaxed max-w-2xl mx-auto">
             Une application complète et intuitive pour créer, gérer et suivre vos factures professionnelles. 
-            Parfait pour les freelances et petites entreprises qui veulent gagner du temps.
+            Parfait pour les freelances et petites entreprises.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <Button size="lg" asChild className="bg-indigo-600 hover:bg-blue-700 text-lg px-10 py-6 font-semibold shadow-lg">
               <Link href="/register">
                 Commencer gratuitement
                 <span className="ml-2">→</span>
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild className="text-lg px-8 border-2">
+            <Button size="lg" variant="outline" asChild className="text-lg px-10 py-6 border-2 border-gray-300 hover:bg-gray-50 font-medium">
               <Link href="/login">Se connecter</Link>
             </Button>
           </div>
-          <p className="text-sm text-gray-500 mt-6">
-            ✓ Aucune carte bancaire requise  •  ✓ Essai gratuit  •  ✓ Support 24/7
-          </p>
-        </div>
-
-        {/* Features Section with 3D Carousel */}
-        <div className="mb-20">
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-              Tout ce dont vous avez besoin
-            </h2>
-
-          </div>
-          
-          {/* Carrousel 3D centré et responsive */}
-          <div className="relative w-full max-w-4xl mx-auto px-4">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-10 blur-3xl rounded-full"></div>
-            <div className="relative z-10">
-              <InvoiceCarousel3D />
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                <span className="text-green-600 text-xs">✓</span>
+              </div>
+              <span>Gratuit sans carte bancaire</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                <span className="text-green-600 text-xs">✓</span>
+              </div>
+              <span>Installation instantanée</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                <span className="text-green-600 text-xs">✓</span>
+              </div>
+              <span>Support réactif</span>
             </div>
           </div>
         </div>
 
+        {/* Features Section with 3D Carousel */}
+        <div className="mb-20">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Tout ce dont vous avez besoin
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Une interface claire et intuitive pour gérer efficacement votre facturation
+            </p>
+          </div>
+          
+          {/* Carrousel 3D centré et responsive */}
+          <div className="relative w-full max-w-5xl mx-auto px-4">
+            <InvoiceCarousel3D />
+          </div>
+        </div>
+
         {/* CTA Section */}
-        <div className="text-center bg-white rounded-2xl p-12 shadow-lg">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        <div className="text-center bg-white rounded-2xl p-12 shadow-lg border border-gray-200">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Prêt à commencer ?
           </h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Rejoignez des milliers d'entrepreneurs qui font confiance à notre solution.
+          <p className="text-lg text-gray-600 mb-8 max-w-xl mx-auto">
+            Rejoignez des milliers d'entrepreneurs qui simplifient leur gestion de factures.
           </p>
-          <Button size="lg" asChild>
-            <Link href="/register">Créer mon compte gratuit</Link>
+          <Button size="lg" asChild className="bg-indigo-600 hover:bg-blue-700 px-10 py-6 text-lg font-semibold shadow-lg">
+            <Link href="/register">Créer mon compte gratuit →</Link>
           </Button>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-white mt-16">
-        <div className="container mx-auto px-4 py-8 text-center text-gray-600">
-          <p>&copy; 2025 FAKTU. Tous droits réservés.</p>
+      <footer className="border-t bg-white mt-20">
+        <div className="container mx-auto px-4 py-10 text-center">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
+              F
+            </div>
+            <span className="text-xl font-bold text-gray-900">FAKTU</span>
+          </div>
+          <p className="text-gray-600">&copy; 2025 FAKTU. Tous droits réservés.</p>
         </div>
       </footer>
     </div>

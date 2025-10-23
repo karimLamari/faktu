@@ -9,10 +9,11 @@ import InvoiceCard from "./InvoiceCard";
 import InvoiceFilters from "./InvoiceFilters";
 import { IInvoice } from "@/models/Invoice";
 import InvoiceFormModal from "./InvoiceFormModal";
+import { SendEmailModal, SendReminderModal } from "./EmailModals";
 
 interface InvoiceListProps {
   initialInvoices: IInvoice[];
-  clients: { _id: string; name: string; companyInfo?: { legalName?: string } }[];
+  clients: { _id: string; name: string; email?: string; companyInfo?: { legalName?: string } }[];
 }
 
 const statusColors: Record<string, string> = {
@@ -35,6 +36,11 @@ export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [editInvoice, setEditInvoice] = useState<IInvoice | null>(null);
+
+  // Email modals state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<IInvoice | null>(null);
 
   const openNew = () => {
     setForm({
@@ -102,6 +108,28 @@ export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
     } finally {
       setFormLoading(false);
     }
+  };
+
+  // Email handlers
+  const handleSendEmail = (invoice: IInvoice) => {
+    setSelectedInvoice(invoice);
+    setShowEmailModal(true);
+  };
+
+  const handleSendReminder = (invoice: IInvoice) => {
+    setSelectedInvoice(invoice);
+    setShowReminderModal(true);
+  };
+
+  const handleEmailSuccess = async () => {
+    setNotif("Email envoyé avec succès !");
+    // Refresh invoice data
+    const res = await fetch('/api/invoices');
+    if (res.ok) {
+      const data = await res.json();
+      setInvoices(data);
+    }
+    setTimeout(() => setNotif(""), 3000);
   };
 
   // Filtrage des factures
@@ -186,6 +214,8 @@ export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
                     }
                   }}
                   onPDF={handleExportPDF}
+                  onSendEmail={handleSendEmail}
+                  onSendReminder={handleSendReminder}
                 />
               );
             })}
@@ -204,6 +234,31 @@ export function InvoiceList({ initialInvoices, clients }: InvoiceListProps) {
         editMode={!!editInvoice}
         handleFormChange={handleFormChange}
       />
+
+      {/* Email Modals */}
+      {showEmailModal && selectedInvoice && (
+        <SendEmailModal
+          invoice={selectedInvoice}
+          clientEmail={clients.find(c => c._id.toString() === selectedInvoice.clientId?.toString())?.email || ''}
+          onClose={() => {
+            setShowEmailModal(false);
+            setSelectedInvoice(null);
+          }}
+          onSuccess={handleEmailSuccess}
+        />
+      )}
+
+      {showReminderModal && selectedInvoice && (
+        <SendReminderModal
+          invoice={selectedInvoice}
+          clientEmail={clients.find(c => c._id.toString() === selectedInvoice.clientId?.toString())?.email || ''}
+          onClose={() => {
+            setShowReminderModal(false);
+            setSelectedInvoice(null);
+          }}
+          onSuccess={handleEmailSuccess}
+        />
+      )}
     </div>
   );
 }

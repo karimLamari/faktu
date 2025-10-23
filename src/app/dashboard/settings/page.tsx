@@ -79,8 +79,12 @@ export default function ProfileSettings() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto py-8">
-        <h2 className="text-2xl font-bold mb-6">Profil utilisateur</h2>
+      <div className="max-w-4xl mx-auto animate-fade-in">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Paramètres</h1>
+          <p className="text-gray-600">Gérez les informations de votre entreprise et de votre profil</p>
+        </div>
         
         {/* Affichage du profil */}
         {!editMode && (
@@ -92,20 +96,27 @@ export default function ProfileSettings() {
 
         {/* Formulaire d'édition */}
         {editMode && (
-          <ProfileForm
-            profile={profile}
-            onChange={handleChange}
-            onLogoChange={handleLogoChange}
-            onSubmit={handleSubmit}
-            onCancel={() => {
-              setEditMode(false);
-              setError('');
-              setSuccess(false);
-            }}
-            isLoading={isLoading}
-            error={error}
-            success={success}
-          />
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 animate-slide-in-up">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Modifier le profil</h2>
+              <p className="text-gray-600">Mettez à jour vos informations professionnelles</p>
+            </div>
+            
+            <ProfileForm
+              profile={profile}
+              onChange={handleChange}
+              onLogoChange={handleLogoChange}
+              onSubmit={handleSubmit}
+              onCancel={() => {
+                setEditMode(false);
+                setError('');
+                setSuccess(false);
+              }}
+              isLoading={isLoading}
+              error={error}
+              success={success}
+            />
+          </div>
         )}
       </div>
     </DashboardLayout>

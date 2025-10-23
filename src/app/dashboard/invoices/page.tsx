@@ -25,6 +25,7 @@ export default async function InvoicesPage() {
     ...client,
     _id: client._id.toString(),
     userId: client.userId.toString(),
+    email: client.email,
   }));
   return (
     <DashboardLayout>
