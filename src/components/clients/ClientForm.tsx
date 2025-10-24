@@ -50,53 +50,58 @@ const ClientForm: React.FC<ClientFormProps> = ({
     <div className="bg-blue-50 rounded-xl p-4 space-y-4 border border-blue-100">
       <h3 className="font-semibold text-gray-900 flex items-center gap-2">
         <User className="w-4 h-4 text-blue-600" />
-        Informations personnelles
+        {form.type === 'business' ? 'Contact principal' : 'Informations personnelles'}
       </h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {form.type === 'individual' ? (
+        // Pour les particuliers: Prénom + Nom requis
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+              Prénom <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="firstName"
+              name="firstName"
+              value={form.firstName || ""}
+              onChange={onChange}
+              required
+              className="h-11 rounded-xl"
+              placeholder="Jean"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
+              Nom de famille <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="lastName"
+              name="lastName"
+              value={form.lastName || ""}
+              onChange={onChange}
+              required
+              className="h-11 rounded-xl"
+              placeholder="Dupont"
+            />
+          </div>
+        </div>
+      ) : (
+        // Pour les entreprises: Nom du contact optionnel
         <div className="space-y-2">
           <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-            Nom <span className="text-red-500">*</span>
+            Nom du contact principal (optionnel)
           </Label>
           <Input
             id="name"
             name="name"
             value={form.name || ""}
             onChange={onChange}
-            required
             className="h-11 rounded-xl"
-            placeholder="Nom du contact"
+            placeholder="Jean Dupont"
           />
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
-            Prénom
-          </Label>
-          <Input
-            id="firstName"
-            name="firstName"
-            value={form.firstName || ""}
-            onChange={onChange}
-            className="h-11 rounded-xl"
-            placeholder="Prénom"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
-          Nom de famille
-        </Label>
-        <Input
-          id="lastName"
-          name="lastName"
-          value={form.lastName || ""}
-          onChange={onChange}
-          className="h-11 rounded-xl"
-          placeholder="Nom de famille"
-        />
-      </div>
+      )}
     </div>
 
     {/* Section Contact */}

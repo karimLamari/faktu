@@ -104,7 +104,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
         .join(", ")
     : "";
 
-  const initials = (client.companyInfo?.legalName || client.name || "?")
+  const initials = (client.name || "?")
     .split(' ')
     .map(word => word[0])
     .slice(0, 2)
@@ -156,14 +156,8 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             {/* Info principale */}
             <div className="flex-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                {client.companyInfo?.legalName || client.name}
+                {client.name || 'Client'}
               </h1>
-              {client.companyInfo?.legalName && client.name && (
-                <div className="flex items-center gap-2 text-gray-600 mb-3">
-                  <User className="w-4 h-4" />
-                  <span>{client.name}</span>
-                </div>
-              )}
               {client.companyInfo?.siret && (
                 <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 font-semibold">
                   <Building2 className="w-4 h-4 mr-2" />

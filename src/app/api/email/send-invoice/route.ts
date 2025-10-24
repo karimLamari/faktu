@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
 
     // Prepare email data
     const emailData = {
-      clientName: client.companyInfo?.legalName || client.name || `${client.firstName} ${client.lastName}`,
+      clientName: client.name || 'Client',
       invoiceNumber: invoice.invoiceNumber,
       total: invoice.total,
       dueDate: invoice.dueDate.toString(),
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
-      from: `${user.companyName} <onboarding@resend.dev>`, // Change to your verified domain
+      from: `${user.companyName} <contact@quxly.fr>`,
       to: toEmail,
       subject: `Facture ${invoice.invoiceNumber} - ${user.companyName}`,
       html: htmlContent,

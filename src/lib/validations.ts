@@ -31,10 +31,11 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Le mot de passe est requis'),
 });
 
-export const clientSchema = z
+// Schema de base sans transform (pour PATCH/updates)
+export const clientSchemaBase = z
   .object({
     type: z.enum(['individual', 'business']).default('business'),
-    name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
+    name: z.string().optional(), // Généré automatiquement selon le type
     companyInfo: z
       .object({
         legalName: z.string().optional(),
@@ -59,7 +60,7 @@ export const clientSchema = z
     isActive: z.boolean().optional(),
   })
   .superRefine((val, ctx) => {
-    // Si business, legalName et siret sont requis et validés
+    // Si business, legalName et siret sont requis
     if (val.type === 'business') {
       if (!val.companyInfo || !val.companyInfo.legalName || val.companyInfo.legalName.trim() === '') {
         ctx.addIssue({
@@ -76,8 +77,39 @@ export const clientSchema = z
         });
       }
     }
-    // Si particulier, ne pas valider siret ou legalName
+    
+    // Si particulier, firstName et lastName sont requis
+    if (val.type === 'individual') {
+      if (!val.firstName || val.firstName.trim() === '') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['firstName'],
+          message: 'Prénom requis pour les particuliers',
+        });
+      }
+      if (!val.lastName || val.lastName.trim() === '') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['lastName'],
+          message: 'Nom de famille requis pour les particuliers',
+        });
+      }
+    }
   });
+
+// Schema complet avec transform (pour POST/create)
+export const clientSchema = clientSchemaBase.transform((val) => {
+  // Générer automatiquement le champ 'name' selon le type
+  if (val.type === 'individual' && val.firstName && val.lastName) {
+    return { ...val, name: `${val.firstName} ${val.lastName}` };
+  } else if (val.type === 'business' && val.companyInfo?.legalName) {
+    return { ...val, name: val.companyInfo.legalName };
+  }
+  return val;
+});
+
+// Schema pour les updates partiels (PATCH)
+export const clientUpdateSchema = clientSchemaBase.partial();
 
 
 export const invoiceItemSchema = z.object({

@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# PWA generated icons (run npm run generate-icons to create)
+# Uncomment if you want to commit generated icons
+# /public/icons/*.png
+# /public/apple-touch-icon.png
+# /public/favicon.ico

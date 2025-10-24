@@ -185,11 +185,9 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 		}
 	};
 
-		const filteredClients = clients.filter((client) =>
-			client.name.toLowerCase().includes(search.toLowerCase())
-		);
-
-		// Ajout client
+	const filteredClients = clients.filter((client) =>
+		(client.name || '').toLowerCase().includes(search.toLowerCase())
+	);		// Ajout client
 		const [addOpen, setAddOpen] = useState(false);
 				  type ClientForm = Partial<Client> & { isActive?: boolean };
 				const [addForm, setAddForm] = useState<ClientForm>({ type: 'business', paymentTerms: 30, isActive: true });
@@ -393,9 +391,9 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 					setForm={setInvoiceForm}
 					formError={invoiceFormError}
 					formLoading={invoiceFormLoading}
-					clients={clients.map(c => ({ _id: c._id, name: c.name }))}
-					editMode={false}
-					handleFormChange={handleInvoiceFormChange}
+				clients={clients.map(c => ({ _id: c._id, name: c.name || 'Client' }))}
+				editMode={false}
+				handleFormChange={handleInvoiceFormChange}
 				/>
 			)}
 			</div>

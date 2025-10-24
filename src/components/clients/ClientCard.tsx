@@ -22,7 +22,7 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, loading, onEdit, onDele
     : "";
 
   // Générer initiales pour l'avatar
-  const initials = (client.companyInfo?.legalName || client.name || "?")
+  const initials = (client.name || "?")
     .split(' ')
     .map(word => word[0])
     .slice(0, 2)
@@ -44,16 +44,10 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, loading, onEdit, onDele
           
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-lg text-gray-900 truncate mb-1">
-              {client.companyInfo?.legalName || client.name}
+              {client.name || 'Client'}
             </h3>
-            {client.companyInfo?.legalName && client.name && (
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                <User className="w-3 h-3" />
-                <span className="truncate">{client.name}</span>
-              </div>
-            )}
             {client.companyInfo?.siret && (
-              <Badge variant="outline" className="text-xs font-semibold border-blue-200 bg-blue-50 text-blue-700">
+              <Badge variant="outline" className="text-xs font-semibold border-blue-200 bg-blue-50 text-blue-700 mt-2">
                 <Building2 className="w-3 h-3 mr-1" />
                 SIRET: {client.companyInfo.siret}
               </Badge>

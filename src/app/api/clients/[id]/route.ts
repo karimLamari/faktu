@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Client from '@/models/Client';
-import { clientSchema } from '@/lib/validations';
+import { clientSchema, clientUpdateSchema } from '@/lib/validations';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 
@@ -44,7 +44,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
     let validatedData;
     try {
-      validatedData = clientSchema.partial().parse(body);
+      validatedData = clientUpdateSchema.parse(body);
+      
+      // Générer le champ name si nécessaire lors de l'update
+      if (validatedData.type === 'individual' && validatedData.firstName && validatedData.lastName) {
+        validatedData.name = `${validatedData.firstName} ${validatedData.lastName}`;
+      } else if (validatedData.type === 'business' && validatedData.companyInfo?.legalName) {
+        validatedData.name = validatedData.companyInfo.legalName;
+      }
     } catch (zodErr) {
       console.error('Zod validation error:', zodErr);
       if (zodErr instanceof z.ZodError) {

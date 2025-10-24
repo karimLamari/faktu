@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hors ligne - FAKTU</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .icon {
+      width: 80px;
+      height: 80px;
+      background: #3B82F6;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      color: white;
+      font-size: 48px;
+      font-weight: 700;
+    }
+    
+    .wifi-icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+      opacity: 0.3;
+    }
+    
+    h1 {
+      color: #111827;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    
+    p {
+      color: #6B7280;
+      font-size: 18px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    
+    .button {
+      background: #3B82F6;
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-block;
+      text-decoration: none;
+    }
+    
+    .button:hover {
+      background: #2563EB;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+    }
+    
+    .tips {
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid #E5E7EB;
+    }
+    
+    .tip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      color: #6B7280;
+      font-size: 14px;
+      text-align: left;
+    }
+    
+    .tip-icon {
+      width: 24px;
+      height: 24px;
+      background: #EFF6FF;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    
+    .wifi-icon {
+      animation: pulse 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="wifi-icon">📡</div>
+    
+    <div class="icon">F</div>
+    
+    <h1>Vous êtes hors ligne</h1>
+    
+    <p>
+      Vérifiez votre connexion Internet pour accéder à toutes les fonctionnalités de FAKTU.
+    </p>
+    
+    <button class="button" onclick="window.location.reload()">
+      Réessayer
+    </button>
+    
+    <div class="tips">
+      <div class="tip">
+        <div class="tip-icon">📶</div>
+        <span>Vérifiez votre connexion Wi-Fi ou données mobiles</span>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">🔄</div>
+        <span>Certaines pages visitées sont disponibles hors ligne</span>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">⚡</div>
+        <span>La synchronisation reprendra automatiquement en ligne</span>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Vérifier la connexion toutes les 5 secondes
+    setInterval(() => {
+      if (navigator.onLine) {
+        window.location.reload();
+      }
+    }, 5000);
+    
+    // Écouter le retour de connexion
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>

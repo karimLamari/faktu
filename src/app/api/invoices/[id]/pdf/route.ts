@@ -282,10 +282,11 @@ function InvoiceHtml_DEPRECATED({ invoice, client, user }: any) {
             <div class="info-block">
               <span class="info-label">Facturé à</span>
               <div class="info-content">
-                <strong>${client?.companyInfo?.legalName || client?.name || ''}</strong><br/>
+                <strong>${client?.name || 'Client'}</strong><br/>
                 ${client?.address?.street || ''}<br/>
                 ${client?.address?.zipCode || ''} ${client?.address?.city || ''}<br/>
-                ${client?.companyInfo?.siret ? `SIRET : ${client.companyInfo.siret}` : ''}
+                ${client?.companyInfo?.siret ? `SIRET : ${client.companyInfo.siret}<br/>` : ''}
+                ${client?.email || ''}${client?.phone ? ' · ' + client.phone : ''}
               </div>
             </div>
  

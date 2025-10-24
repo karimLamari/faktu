@@ -1,6 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📱 FAKTU - Gestion de Factures
 
-## Getting Started
+![PWA Ready](https://img.shields.io/badge/PWA-Ready-blue?style=flat-square&logo=pwa)
+![Next.js](https://img.shields.io/badge/Next.js-15.5.6-black?style=flat-square&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue?style=flat-square&logo=docker)
+
+Application complète de gestion de factures pour freelances et petites entreprises.
+
+---
+
+## ✨ Features
+
+- ✅ **PWA Complète** - Installable, mode offline, expérience native
+- ✅ Gestion clients & factures
+- ✅ Génération PDF professionnelle
+- ✅ Envoi emails automatique (Resend)
+- ✅ Authentification sécurisée (NextAuth v5)
+- ✅ Dashboard avec statistiques
+- ✅ Mode sombre / clair
+- ✅ Responsive (mobile, tablet, desktop)
+- ✅ Docker ready
+
+---
+
+## 🚀 Getting Started
 
 First, run the development server:
 
@@ -18,7 +41,55 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
+
+## 📱 PWA Installation
+
+FAKTU est une Progressive Web App complète ! Pour installer :
+
+```bash
+# 1. Installer Sharp pour la génération d'icônes
+npm install sharp --save-dev
+
+# 2. Générer les icônes PWA
+npm run generate-icons
+
+# 3. Lancer l'app
+npm run dev
+```
+
+**Puis :**
+- 🖥️ **Desktop** : Cliquer sur l'icône ➕ dans la barre d'adresse Chrome
+- 📱 **Mobile** : Menu → "Ajouter à l'écran d'accueil"
+
+📖 **Documentation complète :** [PWA_README.md](./PWA_README.md)  
+⚡ **Guide rapide :** [PWA_QUICKSTART.md](./PWA_QUICKSTART.md)
+
+---
+
+## 📚 Documentation
+
+- **[ANALYSE_PROJET_FEATURES.md](./ANALYSE_PROJET_FEATURES.md)** - Analyse complète + Roadmap
+- **[PWA_README.md](./PWA_README.md)** - Documentation PWA détaillée
+- **[PWA_QUICKSTART.md](./PWA_QUICKSTART.md)** - Installation PWA en 3 étapes
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Guide déploiement VPS
+- **[DOCKER_WINDOWS.md](./DOCKER_WINDOWS.md)** - Guide Docker Windows
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** Next.js 15, React 19, TypeScript
+- **Backend:** Next.js API Routes
+- **Database:** MongoDB Atlas + Mongoose
+- **Auth:** NextAuth v5
+- **Styling:** Tailwind CSS + Radix UI
+- **PDF:** Puppeteer
+- **Email:** Resend API
+- **PWA:** Service Worker + Manifest
+- **Deployment:** Docker + Nginx
+
+---
 
 ## Learn More
 
