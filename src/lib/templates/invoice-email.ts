@@ -39,6 +39,7 @@ export function getInvoiceEmailHtml(data: InvoiceEmailData): string {
       padding: 40px 30px;
       text-align: center;
       color: white;
+      box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
     }
     .header h1 {
       margin: 0;
@@ -97,6 +98,7 @@ export function getInvoiceEmailHtml(data: InvoiceEmailData): string {
       text-align: center;
       margin: 20px 0;
       transition: transform 0.2s;
+      box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
     }
     .cta-button:hover {
       transform: translateY(-2px);

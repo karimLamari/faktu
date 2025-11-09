@@ -1,8 +1,9 @@
-// Service Worker pour FAKTU PWA
-// Version 1.0.0
+// Service Worker pour BLINK PWA
+// Build: 1761424962585
 
-const CACHE_NAME = 'faktu-v1';
-const RUNTIME_CACHE = 'faktu-runtime-v1';
+const BUILD_VERSION = '1761424962585';
+const CACHE_NAME = `BLINK-v${BUILD_VERSION}`;
+const RUNTIME_CACHE = `BLINK-runtime-v${BUILD_VERSION}`;
 
 // Assets à mettre en cache lors de l'installation
 const STATIC_ASSETS = [
@@ -57,10 +58,28 @@ self.addEventListener('activate', (event) => {
 // Stratégie de cache
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  
+  // Vérification précoce du schéma de l'URL avant de créer un objet URL
+  if (request.url.startsWith('chrome-extension://') || 
+      request.url.startsWith('moz-extension://') ||
+      request.url.startsWith('safari-extension://')) {
+    return;
+  }
+  
   const url = new URL(request.url);
 
   // Ignorer les requêtes non-GET
   if (request.method !== 'GET') {
+    return;
+  }
+
+  // Ignorer les extensions Chrome et autres schémas non HTTP(S)
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Ignorer les requêtes externes (CDN, analytics, etc.)
+  if (url.origin !== location.origin) {
     return;
   }
 
@@ -81,7 +100,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stratégie: Cache First, fallback Network
+  // NE PAS CACHER les pages dashboard avec données utilisateur
+  const noCachePages = [
+    '/dashboard/invoices',
+    '/dashboard/clients',
+    '/dashboard/settings',
+    '/dashboard/overview',
+  ];
+  
+  if (noCachePages.some(page => url.pathname.startsWith(page))) {
+    // Network First pour les pages avec données
+    event.respondWith(
+      fetch(request)
+        .catch(() => {
+          // Si hors ligne, afficher page offline au lieu du cache
+          return caches.match('/offline.html').then((response) => {
+            return response || new Response('Vous êtes hors ligne', {
+              headers: { 'Content-Type': 'text/html' },
+              status: 503,
+            });
+          });
+        })
+    );
+    return;
+  }
+
+  // Stratégie: Cache First pour assets statiques uniquement
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
@@ -142,10 +186,28 @@ function isStaticAsset(url) {
   return staticExtensions.some(ext => url.pathname.endsWith(ext));
 }
 
-// Écouter les messages du client (ex: skip waiting)
+// Écouter les messages du client
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  
+  // Vider le cache lors de la déconnexion
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            console.log('[SW] Vidage cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      }).then(() => {
+        console.log('[SW] Cache vidé suite à déconnexion');
+        // Répondre au client
+        event.ports[0].postMessage({ success: true });
+      })
+    );
   }
 });
 

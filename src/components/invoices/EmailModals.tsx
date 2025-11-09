@@ -5,16 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { IInvoice } from "@/models/Invoice";
-import { Mail, X, Send, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { Mail, X, Send, AlertCircle, CheckCircle, Loader2, AlertTriangle, AlertOctagon } from "lucide-react";
 
 interface SendEmailModalProps {
   invoice: IInvoice;
   clientEmail: string;
   onClose: () => void;
   onSuccess: () => void;
+  onUpgradeRequired?: () => void;
 }
 
-export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess }: SendEmailModalProps) {
+export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess, onUpgradeRequired }: SendEmailModalProps) {
   const [email, setEmail] = useState(clientEmail);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +37,14 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess }: Sen
       const data = await res.json();
 
       if (!res.ok) {
+        // Check if it's a PRO feature blocked (403 + featureBlocked)
+        if (res.status === 403 && data.featureBlocked) {
+          setError(data.message || 'Fonctionnalité non disponible');
+          if (onUpgradeRequired) {
+            onUpgradeRequired();
+          }
+          return;
+        }
         throw new Error(data.error || 'Erreur lors de l\'envoi');
       }
 
@@ -51,11 +60,11 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess }: Sen
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
       <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slide-in-up"
+        className="bg-gray-900/95 backdrop-blur-lg rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slide-in-up border border-gray-700/50"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header avec gradient */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white shadow-lg shadow-blue-500/20">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -79,14 +88,14 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess }: Sen
         {/* Body */}
         <div className="p-6 space-y-5">
           {/* Info facture */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200">
+          <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-xl p-4 border border-blue-700/50">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Facture</span>
-              <span className="text-lg font-bold text-gray-900">{invoice.invoiceNumber}</span>
+              <span className="text-sm text-gray-400">Facture</span>
+              <span className="text-lg font-bold text-white">{invoice.invoiceNumber}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Montant</span>
-              <span className="text-2xl font-bold text-blue-600">
+              <span className="text-sm text-gray-400">Montant</span>
+              <span className="text-2xl font-bold text-blue-400">
                 {invoice.total.toFixed(2)} €
               </span>
             </div>
@@ -94,7 +103,7 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess }: Sen
 
           {/* Email input */}
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+            <Label htmlFor="email" className="text-sm font-semibold text-gray-300">
               Email destinataire
             </Label>
             <Input
@@ -104,26 +113,26 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess }: Sen
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email@client.com"
               disabled={loading}
-              className="h-12 rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              className="h-12 rounded-xl bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           {/* Info message */}
           {!error && (
-            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-xl border border-blue-200">
-              <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800">
+            <div className="flex items-start gap-3 p-4 bg-blue-900/30 rounded-xl border border-blue-700/50">
+              <CheckCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-300">
                 <p className="font-semibold mb-1">Le PDF sera joint automatiquement</p>
-                <p className="text-blue-700">Un email professionnel sera envoyé avec la facture en pièce jointe.</p>
+                <p className="text-blue-400">Un email professionnel sera envoyé avec la facture en pièce jointe.</p>
               </div>
             </div>
           )}
 
           {/* Error message */}
           {error && (
-            <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-200 animate-slide-in-up">
-              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-red-800">
+            <div className="flex items-start gap-3 p-4 bg-red-900/30 rounded-xl border border-red-700/50 animate-slide-in-up">
+              <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-red-300">
                 <p className="font-semibold">{error}</p>
               </div>
             </div>
@@ -135,7 +144,7 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess }: Sen
               variant="outline"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 h-12 rounded-xl border-2 hover:bg-gray-50"
+              className="flex-1 h-12 rounded-xl border-2 bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700/50"
             >
               Annuler
             </Button>
@@ -168,9 +177,10 @@ interface SendReminderModalProps {
   clientEmail: string;
   onClose: () => void;
   onSuccess: () => void;
+  onUpgradeRequired?: () => void;
 }
 
-export function SendReminderModal({ invoice, clientEmail, onClose, onSuccess }: SendReminderModalProps) {
+export function SendReminderModal({ invoice, clientEmail, onClose, onSuccess, onUpgradeRequired }: SendReminderModalProps) {
   const [email, setEmail] = useState(clientEmail);
   const [reminderType, setReminderType] = useState<'friendly' | 'firm' | 'final'>('friendly');
   const [customMessage, setCustomMessage] = useState('');
@@ -202,6 +212,14 @@ export function SendReminderModal({ invoice, clientEmail, onClose, onSuccess }: 
       const data = await res.json();
 
       if (!res.ok) {
+        // Check if it's a PRO feature blocked (403 + featureBlocked)
+        if (res.status === 403 && data.featureBlocked) {
+          setError(data.message || 'Fonctionnalité non disponible');
+          if (onUpgradeRequired) {
+            onUpgradeRequired();
+          }
+          return;
+        }
         throw new Error(data.error || 'Erreur lors de l\'envoi');
       }
 
@@ -221,45 +239,46 @@ export function SendReminderModal({ invoice, clientEmail, onClose, onSuccess }: 
 
   const reminderTypeConfig = {
     friendly: { 
-      icon: '💙', 
+      Icon: AlertCircle, 
       label: 'Amicale', 
       desc: 'Rappel courtois et professionnel',
       color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200'
+      bgLight: 'bg-blue-900/30',
+      borderDark: 'border-blue-700/50'
     },
     firm: { 
-      icon: '⚠️', 
+      Icon: AlertTriangle, 
       label: 'Ferme', 
       desc: 'Demande de paiement immédiat',
       color: 'from-orange-500 to-orange-600',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-200'
+      bgLight: 'bg-orange-900/30',
+      borderDark: 'border-orange-700/50'
     },
     final: { 
-      icon: '🚨', 
+      Icon: AlertOctagon, 
       label: 'Dernière', 
       desc: 'Avant procédure judiciaire',
       color: 'from-red-500 to-red-600',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200'
+      bgLight: 'bg-red-900/30',
+      borderDark: 'border-red-700/50'
     },
   };
 
   const currentConfig = reminderTypeConfig[reminderType];
+  const ReminderIcon = currentConfig.Icon;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
       <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto animate-slide-in-up"
+        className="bg-gray-900/95 backdrop-blur-lg rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto animate-slide-in-up border border-gray-700/50"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header dynamique selon le type */}
-        <div className={`bg-gradient-to-r ${currentConfig.color} p-6 text-white`}>
+        <div className={`bg-gradient-to-r ${currentConfig.color} p-6 text-white shadow-lg`}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl">
-                {currentConfig.icon}
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <ReminderIcon className="w-6 h-6" />
               </div>
               <div>
                 <h2 className="text-xl font-bold">Relance client</h2>
@@ -279,28 +298,28 @@ export function SendReminderModal({ invoice, clientEmail, onClose, onSuccess }: 
         {/* Body */}
         <div className="p-6 space-y-5">
           {/* Info facture avec alerte retard */}
-          <div className={`${currentConfig.bgColor} rounded-xl p-4 border ${currentConfig.borderColor}`}>
+          <div className={`${currentConfig.bgLight} rounded-xl p-4 border ${currentConfig.borderDark}`}>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-600">Facture</span>
-              <span className="text-lg font-bold text-gray-900">{invoice.invoiceNumber}</span>
+              <span className="text-sm font-medium text-gray-400">Facture</span>
+              <span className="text-lg font-bold text-white">{invoice.invoiceNumber}</span>
             </div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-gray-600">Montant dû</span>
-              <span className="text-2xl font-bold text-gray-900">
+              <span className="text-sm text-gray-400">Montant dû</span>
+              <span className="text-2xl font-bold text-white">
                 {(invoice.balanceDue || invoice.total).toFixed(2)} €
               </span>
             </div>
             {daysPastDue > 0 && (
-              <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
-                <AlertCircle className="w-4 h-4 text-red-600" />
-                <span className="text-sm text-red-600 font-semibold">
+              <div className="flex items-center gap-2 pt-3 border-t border-gray-700/50">
+                <AlertCircle className="w-4 h-4 text-red-400" />
+                <span className="text-sm text-red-400 font-semibold">
                   En retard de {daysPastDue} jour{daysPastDue > 1 ? 's' : ''}
                 </span>
               </div>
             )}
             {invoice.reminders && invoice.reminders.length > 0 && (
               <div className="flex items-center gap-2 pt-2">
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-gray-400">
                   {invoice.reminders.length} relance{invoice.reminders.length > 1 ? 's' : ''} déjà envoyée{invoice.reminders.length > 1 ? 's' : ''}
                 </span>
               </div>
@@ -309,7 +328,7 @@ export function SendReminderModal({ invoice, clientEmail, onClose, onSuccess }: 
 
           {/* Email */}
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+            <Label htmlFor="email" className="text-sm font-semibold text-gray-300">
               Email destinataire
             </Label>
             <Input
@@ -319,49 +338,52 @@ export function SendReminderModal({ invoice, clientEmail, onClose, onSuccess }: 
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email@client.com"
               disabled={loading}
-              className="h-12 rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              className="h-12 rounded-xl bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           {/* Type de relance avec design moderne */}
           <div className="space-y-3">
-            <Label className="text-sm font-semibold text-gray-700">Type de relance</Label>
+            <Label className="text-sm font-semibold text-gray-300">Type de relance</Label>
             <div className="grid gap-3">
-              {Object.entries(reminderTypeConfig).map(([type, config]) => (
-                <label 
-                  key={type}
-                  className={`
-                    flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all
-                    ${reminderType === type 
-                      ? `${config.borderColor} ${config.bgColor} shadow-md` 
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }
-                    ${loading ? 'opacity-50 cursor-not-allowed' : ''}
-                  `}
-                >
-                  <input
-                    type="radio"
-                    value={type}
-                    checked={reminderType === type}
-                    onChange={(e) => setReminderType(e.target.value as any)}
-                    disabled={loading}
-                    className="w-5 h-5 text-blue-600"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{config.icon}</span>
-                      <span className="font-semibold text-gray-900">{config.label}</span>
+              {Object.entries(reminderTypeConfig).map(([type, config]) => {
+                const ConfigIcon = config.Icon;
+                return (
+                  <label 
+                    key={type}
+                    className={`
+                      flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all
+                      ${reminderType === type 
+                        ? `${config.borderDark} ${config.bgLight} shadow-lg` 
+                        : 'border-gray-700/50 hover:border-gray-600 bg-gray-800/30'
+                      }
+                      ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                    `}
+                  >
+                    <input
+                      type="radio"
+                      value={type}
+                      checked={reminderType === type}
+                      onChange={(e) => setReminderType(e.target.value as any)}
+                      disabled={loading}
+                      className="w-5 h-5 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <ConfigIcon className="w-5 h-5 text-gray-300" />
+                        <span className="font-semibold text-white">{config.label}</span>
+                      </div>
+                      <p className="text-xs text-gray-400">{config.desc}</p>
                     </div>
-                    <p className="text-xs text-gray-600">{config.desc}</p>
-                  </div>
-                </label>
-              ))}
+                  </label>
+                );
+              })}
             </div>
           </div>
 
           {/* Message personnalisé */}
           <div className="space-y-2">
-            <Label htmlFor="message" className="text-sm font-semibold text-gray-700">
+            <Label htmlFor="message" className="text-sm font-semibold text-gray-300">
               Message personnalisé (optionnel)
             </Label>
             <textarea
@@ -370,15 +392,15 @@ export function SendReminderModal({ invoice, clientEmail, onClose, onSuccess }: 
               onChange={(e) => setCustomMessage(e.target.value)}
               placeholder={reminderMessages[reminderType]}
               disabled={loading}
-              className="w-full p-3 border-2 border-gray-300 rounded-xl text-sm min-h-[100px] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
+              className="w-full p-3 bg-gray-800/50 border-2 border-gray-700 text-white placeholder:text-gray-500 rounded-xl text-sm min-h-[100px] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
             />
           </div>
 
           {/* Error */}
           {error && (
-            <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-200 animate-slide-in-up">
-              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-red-800">
+            <div className="flex items-start gap-3 p-4 bg-red-900/30 rounded-xl border border-red-700/50 animate-slide-in-up">
+              <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-red-300">
                 <p className="font-semibold">{error}</p>
               </div>
             </div>
@@ -390,7 +412,7 @@ export function SendReminderModal({ invoice, clientEmail, onClose, onSuccess }: 
               variant="outline"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 h-12 rounded-xl border-2 hover:bg-gray-50"
+              className="flex-1 h-12 rounded-xl border-2 bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700/50"
             >
               Annuler
             </Button>

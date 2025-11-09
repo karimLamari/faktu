@@ -4,15 +4,16 @@ import User from '@/models/User';
 /**
  * Atomically generates the next invoice number for a given user, with yearly reset.
  * Contract:
- * - input: userId (string), optional override for prefix
+ * - input: userId (string), optional clientName and override for prefix
  * - output: { invoiceNumber: string, nextNumber: number, year: number }
  * Behavior:
  * - If the stored year != current year, reset nextNumber to 1 and set year = current
- * - Always increments nextNumber atomically and returns a formatted number: `${prefix}${year}-${NNNN}`
+ * - Always increments nextNumber atomically and returns a formatted number: `${prefix}${year}-${clientInitial}${NNNN}`
+ * - If clientName provided, adds first 3 letters of client name to number
  */
 export async function getNextInvoiceNumber(
   userId: string,
-  opts?: { prefix?: string }
+  opts?: { prefix?: string; clientName?: string }
 ): Promise<{ invoiceNumber: string; nextNumber: number; year: number }> {
   await dbConnect();
 
@@ -83,7 +84,18 @@ export async function getNextInvoiceNumber(
 
   // nextNumber has been incremented; actual current number for this invoice is nextNumber - 1
   const currentSequence = Math.max(1, Number(nextNumber) - 1);
-  const formatted = `${prefix}${year}-${String(currentSequence).padStart(4, '0')}`;
+  
+  // Extract client initials (first 3 letters of client name, uppercase)
+  let clientCode = '';
+  if (opts?.clientName) {
+    clientCode = opts.clientName
+      .trim()
+      .substring(0, 3)
+      .toUpperCase()
+      .replace(/[^A-Z]/g, '') + '-';
+  }
+  
+  const formatted = `${prefix}${year}-${clientCode}${String(currentSequence).padStart(4, '0')}`;
 
   return { invoiceNumber: formatted, nextNumber, year };
 }

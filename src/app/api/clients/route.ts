@@ -4,6 +4,7 @@ import dbConnect from '@/lib/db/mongodb';
 import Client from '@/models/Client';
 import { clientSchema } from '@/lib/validations';
 import { z } from 'zod';
+import { checkClientLimit, incrementClientUsage, decrementClientUsage } from '@/lib/subscription/checkAccess';
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -11,6 +12,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
   try {
+    // Vérifier la limite de clients
+    const { allowed, current, limit, plan } = await checkClientLimit();
+    if (!allowed) {
+      return NextResponse.json({ 
+        error: 'Limite de clients atteinte',
+        limitReached: true,
+        current,
+        limit,
+        plan
+      }, { status: 403 });
+    }
+
     const body = await request.json();
     let validatedData;
     try {
@@ -32,6 +45,10 @@ export async function POST(request: NextRequest) {
       ...validatedData,
       userId: session.user.id,
     });
+    
+    // Incrémenter le compteur de clients
+    await incrementClientUsage();
+    
     return NextResponse.json(newClient, { status: 201 });
   } catch (error) {
     console.error('Erreur lors de la création du client:', error);

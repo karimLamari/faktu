@@ -52,15 +52,15 @@ export function InvoiceHtml({ invoice, client, user }: InvoiceHtmlProps): string
         <style>
           @page { 
             size: A4; 
-            margin: 25mm 20mm 25mm 20mm;
+            margin: 12mm 15mm 12mm 15mm;
           }
           body { 
             font-family: 'Helvetica Neue', Arial, sans-serif; 
             margin: 0; 
             padding: 0; 
             background: #ffffff; 
-            font-size: 12px; 
-            line-height: 1.4;
+            font-size: 11px; 
+            line-height: 1.3;
             color: #333333;
           }
           .container { 
@@ -72,89 +72,100 @@ export function InvoiceHtml({ invoice, client, user }: InvoiceHtmlProps): string
             display: flex; 
             justify-content: space-between; 
             align-items: flex-start;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
             border-bottom: 2px solid #2c5aa0;
           }
           .company-info {
             flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+          .company-logo {
+            max-width: 70px;
+            max-height: 70px;
+            object-fit: contain;
+          }
+          .company-details-wrapper {
+            flex: 1;
           }
           .company-name {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
             color: #2c5aa0;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             letter-spacing: 0.5px;
           }
           .company-details {
-            font-size: 11px;
+            font-size: 10px;
             color: #666666;
-            line-height: 1.5;
+            line-height: 1.4;
           }
           .invoice-meta {
             text-align: right;
-            min-width: 200px;
+            min-width: 180px;
           }
           .invoice-title {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 300;
             color: #2c5aa0;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             letter-spacing: 1px;
           }
           .invoice-number {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: #333333;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
           }
           .invoice-date {
-            font-size: 11px;
+            font-size: 10px;
             color: #666666;
           }
           .info-section {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 30px;
-            gap: 40px;
+            margin-bottom: 20px;
+            gap: 30px;
           }
           .info-block {
             flex: 1;
-            padding: 15px;
+            padding: 12px;
             background: #f8f9fa;
             border-radius: 4px;
           }
           .info-label {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             color: #2c5aa0;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: block;
           }
           .info-content {
-            font-size: 11px;
+            font-size: 10px;
             color: #333333;
-            line-height: 1.6;
+            line-height: 1.5;
           }
           .items-section {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
           }
           .items-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
+            font-size: 10px;
           }
           .items-table th {
             background: #2c5aa0;
             color: white;
-            padding: 12px 8px;
+            padding: 10px 6px;
             text-align: left;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            font-size: 10px;
+            font-size: 9px;
           }
           .items-table th:first-child {
             border-top-left-radius: 4px;
@@ -163,17 +174,17 @@ export function InvoiceHtml({ invoice, client, user }: InvoiceHtmlProps): string
             border-top-right-radius: 4px;
           }
           .items-table td {
-            padding: 12px 8px;
+            padding: 8px 6px;
             border-bottom: 1px solid #e9ecef;
           }
           .items-table tr:hover {
             background: #f8f9fa;
           }
-          .qty-column { width: 60px; text-align: center; }
+          .qty-column { width: 50px; text-align: center; }
           .description-column { width: auto; }
-          .unit-price-column { width: 100px; text-align: right; }
-          .tva-column { width: 80px; text-align: right; }
-          .total-column { width: 100px; text-align: right; font-weight: 600; }
+          .unit-price-column { width: 90px; text-align: right; }
+          .tva-column { width: 70px; text-align: right; }
+          .total-column { width: 90px; text-align: right; font-weight: 600; }
           
           /* Alignement des en-têtes avec les colonnes */
           .items-table th.qty-column { text-align: center; }
@@ -183,15 +194,15 @@ export function InvoiceHtml({ invoice, client, user }: InvoiceHtmlProps): string
           .totals-section {
             display: flex;
             justify-content: flex-end;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
           }
           .totals-table {
-            width: 300px;
+            width: 280px;
             border-collapse: collapse;
-            font-size: 12px;
+            font-size: 11px;
           }
           .totals-table td {
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-bottom: 1px solid #e9ecef;
           }
           .totals-table .label {
@@ -203,61 +214,60 @@ export function InvoiceHtml({ invoice, client, user }: InvoiceHtmlProps): string
             text-align: right;
             font-weight: 600;
             color: #333333;
-            min-width: 100px;
+            min-width: 90px;
           }
           .totals-table .subtotal {
             border-top: 2px solid #e9ecef;
-            padding-top: 12px;
+            padding-top: 8px;
           }
           .totals-table .grand-total {
             background: #2c5aa0;
             color: white;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             border: none;
           }
           .totals-table .grand-total .label,
           .totals-table .grand-total .value {
             color: white;
-            padding: 12px;
+            padding: 10px;
           }
           .footer {
-            margin-top: 40px;
-            padding-top: 20px;
+            margin-top: 25px;
+            padding-top: 15px;
             border-top: 1px solid #e9ecef;
-            font-size: 10px;
+            font-size: 9px;
             color: #666666;
           }
           .payment-info {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
           }
           .payment-terms {
             font-weight: 600;
             color: #2c5aa0;
-            margin-bottom: 6px;
-            text-transform: uppercase;
+            margin-bottom: 5px;
             letter-spacing: 0.5px;
           }
           .bank-details {
             background: #f8f9fa;
-            padding: 12px;
+            padding: 10px;
             border-radius: 4px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             text-align: center;
           }
           .iban {
             font-family: monospace;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             color: #2c5aa0;
             letter-spacing: 1px;
           }
           .legal-mentions {
             text-align: center;
-            font-size: 9px;
+            font-size: 8px;
             color: #999999;
-            line-height: 1.4;
+            line-height: 1.3;
           }
         </style>
       </head>
@@ -265,12 +275,15 @@ export function InvoiceHtml({ invoice, client, user }: InvoiceHtmlProps): string
         <div class="container">
           <div class="header">
             <div class="company-info">
-              <div class="company-name">${user?.companyName || ''}</div>
-              <div class="company-details">
-                ${user?.address?.street || ''}<br/>
-                ${user?.address?.zipCode || ''} ${user?.address?.city || ''}<br/>
-                ${user?.siret ? `SIRET : ${user.siret}<br/>` : ''}
-                ${user?.email || ''}${user?.phone ? ' · ' + user.phone : ''}
+              ${user?.logo ? `<img src="${user.logo}" alt="Logo" class="company-logo" />` : ''}
+              <div class="company-details-wrapper">
+                <div class="company-name">${user?.companyName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim()}</div>
+                <div class="company-details">
+                  ${user?.address?.street || ''}<br/>
+                  ${user?.address?.zipCode || ''} ${user?.address?.city || ''}<br/>
+                  ${user?.siret ? `SIRET : ${user.siret}<br/>` : ''}
+                  ${user?.email || ''}${user?.phone ? ' · ' + user.phone : ''}
+                </div>
               </div>
             </div>
             <div class="invoice-meta">
@@ -319,6 +332,16 @@ export function InvoiceHtml({ invoice, client, user }: InvoiceHtmlProps): string
                 <td class="label">TOTAL TTC :</td>
                 <td class="value">${Number(invoice.total).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</td>
               </tr>
+              ${invoice.amountPaid > 0 ? `
+              <tr class="amount-paid">
+                <td class="label">Montant payé :</td>
+                <td class="value" style="color: #059669;">- ${Number(invoice.amountPaid).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</td>
+              </tr>
+              <tr class="balance-due" style="border-top: 2px solid #2c5aa0;">
+                <td class="label" style="padding-top: 8px;"><strong>RESTE À PAYER :</strong></td>
+                <td class="value" style="padding-top: 8px;"><strong>${Number(invoice.balanceDue || (invoice.total - invoice.amountPaid)).toLocaleString('fr-FR', {minimumFractionDigits:2})} €</strong></td>
+              </tr>
+              ` : ''}
             </table>
           </div>
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import User from '@/models/User';
-import { userSchema } from '@/lib/validations';
+import { userProfileUpdateSchema } from '@/lib/validations';
 import { z } from 'zod';
 
 export async function GET(req: NextRequest) {
@@ -31,11 +31,12 @@ export async function PATCH(req: NextRequest) {
     siret: data.siret?.trim() || undefined,
     phone: data.phone?.trim() || undefined,
     logo: data.logo?.trim() || undefined,
+    iban: data.iban?.trim() || undefined,
   };
   
   let validatedData;
   try {
-    validatedData = userSchema.partial().parse(cleanedData);
+    validatedData = userProfileUpdateSchema.parse(cleanedData);
     console.log('✅ Données validées:', JSON.stringify(validatedData, null, 2));
   } catch (zodErr) {
     if (zodErr instanceof z.ZodError) {

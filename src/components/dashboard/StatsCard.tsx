@@ -20,16 +20,16 @@ const StatsCard: React.FC<StatsCardProps> = ({
   className = '' 
 }) => {
   return (
-    <Card className={`p-4 bg-white rounded-lg shadow border ${className}`}>
+    <Card className={`p-4 bg-gray-900/80 backdrop-blur-lg rounded-lg shadow-2xl border border-gray-700/50 ${className}`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="text-sm text-gray-500 mb-1">{label}</div>
-          <div className="text-2xl font-bold">{value}</div>
+          <div className="text-sm text-gray-400 mb-1">{label}</div>
+          <div className="text-2xl font-bold text-white">{value}</div>
           
           {/* Tendance optionnelle */}
           {trend && (
             <div className={`text-sm mt-1 flex items-center gap-1 ${
-              trend.isPositive ? 'text-green-600' : 'text-red-600'
+              trend.isPositive ? 'text-green-400' : 'text-red-400'
             }`}>
               <span>{trend.isPositive ? '↑' : '↓'}</span>
               <span>{Math.abs(trend.value)}%</span>
@@ -39,7 +39,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
         
         {/* Icône optionnelle */}
         {icon && (
-          <div className="text-gray-400 ml-2">
+          <div className="text-gray-500 ml-2">
             {icon}
           </div>
         )}

@@ -2,6 +2,11 @@
 
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import ServiceSelector from '@/components/common/ServiceSelector';
+import { 
+  FiEdit2, FiFileText, FiCalendar, FiTrash2, FiDollarSign,
+  FiCreditCard, FiSave, FiLoader, FiAlertCircle, FiCheckCircle 
+} from 'react-icons/fi';
 
 interface InvoiceFormModalProps {
   open: boolean;
@@ -28,6 +33,19 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
   editMode,
   handleFormChange,
 }) => {
+  // Add service to items handler
+  const handleAddService = (service: any) => {
+    const items = form.items ? [...form.items] : [];
+    items.push({
+      description: service.name,
+      quantity: 1,
+      unitPrice: service.unitPrice,
+      taxRate: service.taxRate ?? 20, // Utilise ?? pour gérer le 0 correctement
+      unit: service.unit || 'unit'
+    });
+    setForm({ ...form, items });
+  };
+
   // Calcul automatique à chaque changement d'items
   useEffect(() => {
     if (!form?.items || !Array.isArray(form.items)) return;
@@ -85,12 +103,15 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-slide-in-up">
+      <div className="bg-gray-900/95 backdrop-blur-lg rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-slide-in-up border border-gray-700/50">
         {/* Header */}
-        <div className={`${editMode ? 'bg-indigo-600' : 'bg-green-600'} p-6 text-white`}>
-          <h2 className="text-2xl font-bold mb-1">
-            {editMode ? "✏️ Modifier la facture" : "✨ Nouvelle facture"}
-          </h2>
+        <div className={`${editMode ? 'bg-gradient-to-r from-indigo-500 to-blue-500' : 'bg-gradient-to-r from-green-500 to-green-600'} p-6 text-white shadow-lg ${editMode ? 'shadow-indigo-500/20' : 'shadow-green-500/20'}`}>
+          <div className="flex items-center gap-3 mb-2">
+            {editMode ? <FiEdit2 className="w-6 h-6" /> : <FiFileText className="w-6 h-6" />}
+            <h2 className="text-2xl font-bold">
+              {editMode ? "Modifier la facture" : "Nouvelle facture"}
+            </h2>
+          </div>
           <p className="text-sm opacity-90">
             {editMode ? "Mettez à jour les informations de la facture" : "Créez une nouvelle facture pour votre client"}
           </p>
@@ -100,30 +121,36 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           <form id="invoice-form" onSubmit={onSubmit} className="space-y-6">
             {/* Section Client et Dates */}
-            <div className="bg-blue-50 rounded-xl p-5 border border-blue-100 space-y-4">
-              <h3 className="font-semibold text-gray-900 text-lg mb-3">📋 Informations générales</h3>
+            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50 space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <FiFileText className="w-5 h-5 text-blue-400" />
+                <h3 className="font-semibold text-white text-lg">Informations générales</h3>
+              </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Client *</label>
+                <label className="block text-sm font-semibold text-gray-300 mb-2">Client *</label>
                 <select
-                  className="w-full h-12 border-2 border-gray-300 rounded-xl px-4 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                  className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                   name="clientId"
                   value={form?.clientId || ""}
                   onChange={handleFormChange}
                   required
                 >
-                  <option value="">Sélectionnez un client</option>
+                  <option value="" className="bg-gray-800">Sélectionnez un client</option>
                   {clients.map((c) => (
-                    <option key={c._id} value={c._id}>{c.name}</option>
+                    <option key={c._id} value={c._id} className="bg-gray-800">{c.name}</option>
                   ))}
                 </select>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">📅 Date d'émission *</label>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+                    <FiCalendar className="w-4 h-4" />
+                    Date d'émission *
+                  </label>
                   <input
-                    className="w-full h-12 border-2 border-gray-300 rounded-xl px-4 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                    className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                     name="issueDate"
                     type="date"
                     value={
@@ -138,9 +165,12 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">⏰ Date d'échéance *</label>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+                    <FiCalendar className="w-4 h-4" />
+                    Date d'échéance *
+                  </label>
                   <input
-                    className="w-full h-12 border-2 border-gray-300 rounded-xl px-4 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                    className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                     name="dueDate"
                     type="date"
                     value={
@@ -157,12 +187,15 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
               </div>
             </div>
             {/* Section Lignes de facture */}
-            <div className="bg-green-50 rounded-xl p-5 border border-green-100">
+            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">🧾 Lignes de la facture</h3>
+                <div className="flex items-center gap-2">
+                  <FiFileText className="w-5 h-5 text-green-400" />
+                  <h3 className="text-lg font-semibold text-white">Lignes de la facture</h3>
+                </div>
                 <button 
                   type="button" 
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg text-sm font-semibold transition-all shadow-lg shadow-green-500/20"
                   onClick={addItem}
                 >
                   <span className="text-lg">+</span>
@@ -170,33 +203,38 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                 </button>
               </div>
 
+              {/* Service selector */}
+              <ServiceSelector isOpen={open} onAddService={handleAddService} />
+
               {form.items && form.items.length > 0 ? (
                 <div className="space-y-4">
                   {form.items.map((item: any, idx: number) => (
-                    <div key={idx} className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-green-300 transition-all">
+                    <div key={idx} className="bg-gray-900/50 border border-gray-700/50 rounded-xl p-4 hover:border-green-500/50 transition-all">
                       {/* En-tête de ligne */}
                       <div className="flex items-center justify-between mb-4">
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
+                        <span className="px-3 py-1 bg-green-900/30 text-green-400 border border-green-700/50 rounded-full text-xs font-bold">
                           Ligne {idx + 1}
                         </span>
                         <button 
                           type="button" 
-                          className="flex items-center gap-1 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed" 
+                          className="flex items-center gap-1 px-3 py-1.5 text-red-400 hover:bg-red-900/30 rounded-lg text-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed" 
                           onClick={() => removeItem(idx)} 
                           title="Supprimer cette ligne"
                           disabled={form.items.length === 1}
                         >
-                          🗑️ Supprimer
+                          <FiTrash2 className="w-4 h-4" />
+                          Supprimer
                         </button>
                       </div>
 
                       {/* Description */}
                       <div className="mb-3">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          📝 Description *
+                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+                          <FiFileText className="w-4 h-4" />
+                          Description *
                         </label>
                         <input
-                          className="w-full h-11 border-2 border-gray-300 rounded-xl px-4 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                          className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white placeholder:text-gray-500 rounded-lg px-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                           placeholder="Ex: Développement web, Consultation, Produit X..."
                           value={item.description || ""}
                           onChange={e => handleItemChange(idx, "description", e.target.value)}
@@ -207,11 +245,11 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                       {/* Grille des champs numériques */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 mb-2">
+                          <label className="block text-xs font-semibold text-gray-300 mb-2">
                             Qté
                           </label>
                           <input
-                            className="w-full h-10 border-2 border-gray-300 rounded-lg px-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             type="number"
                             min="0.001"
                             step="0.001"
@@ -222,10 +260,10 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Prix unitaire HT</label>
+                        <label className="block text-xs font-medium text-gray-300 mb-1">Prix unitaire HT</label>
                         <div className="relative">
                           <input
-                            className="w-full border border-gray-300 rounded-md px-2 py-1.5 pr-6 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 pr-6 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             type="number"
                             min="0"
                             step="0.01"
@@ -234,15 +272,15 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                             onChange={e => handleItemChange(idx, "unitPrice", e.target.value)}
                             required
                           />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">€</span>
                         </div>
                       </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 mb-2">
+                          <label className="block text-xs font-semibold text-gray-300 mb-2">
                             TVA (%)
                           </label>
                           <input
-                            className="w-full h-10 border-2 border-gray-300 rounded-lg px-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             type="number"
                             min="0"
                             step="0.01"
@@ -253,29 +291,32 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 mb-2">
+                          <label className="block text-xs font-semibold text-gray-300 mb-2">
                             Unité
                           </label>
                           <select
-                            className="w-full h-10 border-2 border-gray-300 rounded-lg px-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             value={item.unit || "unit"}
                             onChange={e => handleItemChange(idx, "unit", e.target.value)}
                             required
                           >
-                            <option value="unit">Unité</option>
-                            <option value="hour">Heure</option>
-                            <option value="day">Jour</option>
-                            <option value="month">Mois</option>
-                            <option value="kg">Kg</option>
+                            <option value="unit" className="bg-gray-800">Unité</option>
+                            <option value="hour" className="bg-gray-800">Heure</option>
+                            <option value="day" className="bg-gray-800">Jour</option>
+                            <option value="month" className="bg-gray-800">Mois</option>
+                            <option value="kg" className="bg-gray-800">Kg</option>
                           </select>
                         </div>
                       </div>
 
                       {/* Total de la ligne */}
-                      <div className="mt-3 pt-3 border-t-2 border-green-200 bg-green-50 rounded-lg p-3">
+                      <div className="mt-3 pt-3 border-t-2 border-green-700/50 bg-green-900/20 rounded-lg p-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold text-green-700">💰 Total HT de cette ligne:</span>
-                          <span className="text-lg font-bold text-green-900">
+                          <span className="flex items-center gap-2 text-sm font-semibold text-green-400">
+                            <FiDollarSign className="w-4 h-4" />
+                            Total HT de cette ligne:
+                          </span>
+                          <span className="text-lg font-bold text-green-300">
                             {((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                           </span>
                         </div>
@@ -285,43 +326,45 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
               </div>
               ) : (
                 <div className="text-center py-12 px-4">
-                  <div className="text-6xl mb-4">📋</div>
-                  <p className="text-gray-500 font-medium mb-1">Aucune ligne pour l'instant</p>
-                  <p className="text-sm text-gray-400">Cliquez sur "Ajouter une ligne" pour commencer</p>
+                  <FiFileText className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+                  <p className="text-gray-400 font-medium mb-1">Aucune ligne pour l'instant</p>
+                  <p className="text-sm text-gray-500">Cliquez sur "Ajouter une ligne" pour commencer</p>
                 </div>
               )}
           </div>
           {/* Calculs automatiques - Section orange */}
-          <div className="bg-orange-50 rounded-xl p-5 border-2 border-orange-200">
-            <h3 className="text-sm font-bold text-orange-800 mb-4 flex items-center gap-2">
-              🧮 Calculs automatiques
+          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-blue-400 mb-4">
+              <FiDollarSign className="w-5 h-5" />
+              Calculs automatiques
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-orange-700 mb-2">
+                <label className="block text-xs font-semibold text-gray-300 mb-2">
                   Sous-total HT
                 </label>
-                <div className="flex items-center gap-2 bg-white rounded-lg px-4 py-3 border-2 border-orange-300">
-                  <span className="text-lg font-bold text-orange-900">
+                <div className="flex items-center gap-2 bg-gray-900/50 rounded-lg px-4 py-3 border border-gray-700/50">
+                  <span className="text-lg font-bold text-white">
                     {(form?.subtotal || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                   </span>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-orange-700 mb-2">
+                <label className="block text-xs font-semibold text-gray-300 mb-2">
                   TVA
                 </label>
-                <div className="flex items-center gap-2 bg-white rounded-lg px-4 py-3 border-2 border-orange-300">
-                  <span className="text-lg font-bold text-orange-900">
+                <div className="flex items-center gap-2 bg-gray-900/50 rounded-lg px-4 py-3 border border-gray-700/50">
+                  <span className="text-lg font-bold text-white">
                     {(form?.taxAmount || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                   </span>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-orange-700 mb-2">
-                  💰 Total TTC
+                <label className="flex items-center gap-2 text-xs font-semibold text-gray-300 mb-2">
+                  <FiDollarSign className="w-4 h-4" />
+                  Total TTC
                 </label>
-                <div className="flex items-center gap-2 bg-orange-500 rounded-lg px-4 py-3 border-2 border-orange-600 shadow-md">
+                <div className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg px-4 py-3 border border-green-600 shadow-lg shadow-green-500/20">
                   <span className="text-xl font-bold text-white">
                     {(form?.total || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                   </span>
@@ -330,12 +373,13 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
             </div>
           </div>
           {/* Notes - Section grise */}
-          <div className="bg-gray-50 rounded-xl p-5 border-2 border-gray-200">
-            <label className="flex items-center gap-2 text-sm font-bold text-gray-800 mb-3">
-              📝 Notes
+          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+            <label className="flex items-center gap-2 text-sm font-bold text-gray-300 mb-3">
+              <FiFileText className="w-4 h-4" />
+              Notes
             </label>
             <textarea
-              className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors resize-none"
+              className="w-full bg-gray-800/50 border border-gray-700 text-white placeholder:text-gray-500 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors resize-none"
               name="notes"
               placeholder="Ajoutez des notes ou conditions particulières..."
               value={form?.notes || ""}
@@ -345,68 +389,106 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
           </div>
 
           {/* Statut et méthode de paiement - Section bleue */}
-          <div className="bg-blue-50 rounded-xl p-5 border-2 border-blue-200">
-            <h3 className="text-sm font-bold text-blue-800 mb-4 flex items-center gap-2">
-              💳 Informations de paiement
+          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-blue-400 mb-4">
+              <FiCreditCard className="w-5 h-5" />
+              Informations de paiement
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-blue-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-300 mb-2">
                   Statut du paiement *
                 </label>
                 <select
-                  className="w-full h-12 border-2 border-blue-300 rounded-xl px-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   name="paymentStatus"
                   value={form?.paymentStatus || "pending"}
                   onChange={handleFormChange}
                   required
                 >
-                  <option value="pending">⏳ En attente</option>
-                  <option value="paid">✅ Payé</option>
-                  <option value="partially_paid">⚠️ Partiellement payé</option>
-                  <option value="overdue">🔴 En retard</option>
-                  <option value="cancelled">❌ Annulée</option>
+                  <option value="pending" className="bg-gray-800">En attente</option>
+                  <option value="paid" className="bg-gray-800">Payé</option>
+                  <option value="partially_paid" className="bg-gray-800">Partiellement payé</option>
+                  <option value="overdue" className="bg-gray-800">En retard</option>
+                  <option value="cancelled" className="bg-gray-800">Annulée</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-purple-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-300 mb-2">
                   Méthode de paiement *
                 </label>
                 <select
-                  className="w-full h-12 border-2 border-purple-300 rounded-xl px-4 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                  className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   name="paymentMethod"
                   value={form?.paymentMethod || "bank_transfer"}
                   onChange={handleFormChange}
                   required
                 >
-                  <option value="bank_transfer">🏦 Virement bancaire</option>
-                  <option value="check">📝 Chèque</option>
-                  <option value="cash">💵 Espèces</option>
-                  <option value="card">💳 Carte bancaire</option>
-                  <option value="online">🌐 Paiement en ligne</option>
-                  <option value="other">➕ Autre</option>
+                  <option value="bank_transfer" className="bg-gray-800">Virement bancaire</option>
+                  <option value="check" className="bg-gray-800">Chèque</option>
+                  <option value="cash" className="bg-gray-800">Espèces</option>
+                  <option value="card" className="bg-gray-800">Carte bancaire</option>
+                  <option value="online" className="bg-gray-800">Paiement en ligne</option>
+                  <option value="other" className="bg-gray-800">Autre</option>
                 </select>
               </div>
             </div>
+
+            {/* Champ conditionnel pour le montant payé */}
+            {form?.paymentStatus === 'partially_paid' && (
+              <div className="mt-4 p-4 bg-orange-900/30 border border-orange-700/50 rounded-xl">
+                <label className="flex items-center gap-2 text-sm font-semibold text-orange-300 mb-2">
+                  <FiDollarSign className="w-4 h-4" />
+                  Montant déjà payé *
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={form?.total || 0}
+                    name="amountPaid"
+                    value={form?.amountPaid || 0}
+                    onChange={handleFormChange}
+                    className="w-full h-10 bg-gray-800/50 border border-orange-700/50 text-white rounded-lg px-3 pr-12 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                    placeholder="0.00"
+                    required
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">
+                    €
+                  </span>
+                </div>
+                <p className="text-xs text-orange-300 mt-2">
+                  Total : {(form?.total || 0).toFixed(2)} € • 
+                  Reste à payer : {((form?.total || 0) - (form?.amountPaid || 0)).toFixed(2)} €
+                </p>
+              </div>
+            )}
           </div>
+
+
+
+
+
+
             {/* Message d'erreur */}
             {formError && (
-              <div className="flex items-center gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
-                <span className="text-sm font-medium text-red-800">{formError}</span>
+              <div className="flex items-center gap-3 p-4 bg-red-900/30 rounded-xl border border-red-700/50">
+                <span className="text-sm font-medium text-red-300">{formError}</span>
               </div>
             )}
           </form>
         </div>
 
         {/* Footer avec actions */}
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
+        <div className="p-6 border-t border-gray-700/50 bg-gray-800/50">
           <div className="flex gap-3">
             <Button 
               type="button" 
               variant="outline" 
               onClick={onClose} 
               disabled={formLoading}
-              className="flex-1 h-12 rounded-xl border-2"
+              className="flex-1 h-12 rounded-xl border-2 bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700/50"
             >
               Annuler
             </Button>
@@ -414,9 +496,24 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
               type="submit"
               form="invoice-form"
               disabled={formLoading}
-              className={`flex-1 h-12 rounded-xl ${editMode ? 'bg-indigo-600 hover:bg-blue-700 shadow-md' : 'bg-green-600 hover:bg-green-700 shadow-md'}`}
+              className={`flex-1 h-12 rounded-xl shadow-lg ${editMode ? 'bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 shadow-indigo-500/20' : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-green-500/20'}`}
             >
-              {formLoading ? "⏳ Enregistrement..." : editMode ? "💾 Enregistrer" : "✨ Créer la facture"}
+              {formLoading ? (
+                <span className="flex items-center gap-2">
+                  <FiLoader className="w-4 h-4 animate-spin" />
+                  Enregistrement...
+                </span>
+              ) : editMode ? (
+                <span className="flex items-center gap-2">
+                  <FiSave className="w-4 h-4" />
+                  Enregistrer
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <FiCheckCircle className="w-4 h-4" />
+                  Créer la facture
+                </span>
+              )}
             </Button>
           </div>
         </div>

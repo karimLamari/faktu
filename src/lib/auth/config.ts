@@ -113,6 +113,10 @@ export const authOptions = {
       if ((token as any)?.id && session.user) {
         (session.user as any).id = (token as any).id as string;
       }
+      // S'assurer que l'email est présent dans la session
+      if (token?.email && session.user) {
+        session.user.email = token.email as string;
+      }
       return session;
     },
   },

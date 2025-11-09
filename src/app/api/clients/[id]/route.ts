@@ -6,6 +6,7 @@ import Client from '@/models/Client';
 import { clientSchema, clientUpdateSchema } from '@/lib/validations';
 import { z } from 'zod';
 import mongoose from 'mongoose';
+import { decrementClientUsage } from '@/lib/subscription/checkAccess';
 
 // GET a single client by ID
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -103,6 +104,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     if (!deletedClient) {
       return NextResponse.json({ error: 'Client non trouvé ou non autorisé à supprimer' }, { status: 404 });
     }
+    
+    // Décrémenter le compteur de clients
+    await decrementClientUsage();
+    
     return NextResponse.json({ message: 'Client supprimé avec succès' }, { status: 200 });
   } catch (error) {
     console.error('Erreur lors de la suppression du client:', error);

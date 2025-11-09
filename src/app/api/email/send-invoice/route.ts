@@ -4,11 +4,14 @@ import { Resend } from 'resend';
 import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Invoice from '@/models/Invoice';
+import InvoiceTemplate from '@/models/InvoiceTemplate';
 import Client from '@/models/Client';
 import User from '@/models/User';
 import { getInvoiceEmailHtml, getInvoiceEmailText } from '@/lib/templates/invoice-email';
-import { generatePdfBuffer } from '@/lib/services/pdf-generator';
-import { InvoiceHtml } from '@/lib/templates/invoice-pdf-template';
+import { generateInvoicePdf } from '@/lib/services/pdf-generator';
+import { DEFAULT_TEMPLATE } from '@/lib/invoice-templates/presets';
+import { PLANS } from '@/lib/subscription/plans';
+import { isProfileComplete, getMissingProfileFields } from '@/lib/utils/profile';
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -47,6 +50,39 @@ export async function POST(req: NextRequest) {
     // Connect to database
     await dbConnect();
 
+    // Fetch user first to check subscription plan
+    const user: any = await User.findById(session.user.id).lean();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Utilisateur introuvable' },
+        { status: 404 }
+      );
+    }
+
+    // Check if email automation is allowed for this plan
+    const userPlan = user.subscription?.plan || 'free';
+    const planFeatures = PLANS[userPlan];
+    
+    if (!planFeatures.emailAutomation) {
+      return NextResponse.json(
+        {
+          error: 'Fonctionnalité non disponible',
+          message: 'L\'envoi automatique d\'emails est disponible uniquement pour les plans Pro et Business.',
+          featureBlocked: true,
+          plan: userPlan,
+          requiredPlan: 'pro',
+          upgradeUrl: '/dashboard/pricing'
+        },
+        {
+          status: 403,
+          headers: {
+            'X-Feature-Required': 'emailAutomation',
+            'X-Upgrade-Plan': 'pro'
+          }
+        }
+      );
+    }
+
     // Fetch invoice with user verification
     const invoice: any = await Invoice.findOne({
       _id: invoiceId,
@@ -69,13 +105,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch user (sender) information
-    const user: any = await User.findById(session.user.id).lean();
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Utilisateur introuvable' },
-        { status: 404 }
-      );
+    // Vérifier que le profil est complet
+    if (!isProfileComplete(user)) {
+      const missingFields = getMissingProfileFields(user);
+      return NextResponse.json({ 
+        error: 'Profil incomplet',
+        message: `Veuillez compléter votre profil pour envoyer des factures par email. Champs manquants : ${missingFields.join(', ')}`,
+        missingFields
+      }, { status: 400 });
     }
 
     // Determine recipient email (use provided or client's email)
@@ -87,7 +124,7 @@ export async function POST(req: NextRequest) {
       invoiceNumber: invoice.invoiceNumber,
       total: invoice.total,
       dueDate: invoice.dueDate.toString(),
-      companyName: user.companyName,
+      companyName: user.companyName || `${user.firstName} ${user.lastName}`,
       pdfUrl: invoice.pdfUrl,
     };
 
@@ -95,15 +132,27 @@ export async function POST(req: NextRequest) {
     const htmlContent = getInvoiceEmailHtml(emailData);
     const textContent = getInvoiceEmailText(emailData);
 
-    // Generate PDF attachment
-    const invoiceHtml = InvoiceHtml({ invoice, client, user });
-    const pdfBuffer = await generatePdfBuffer(invoiceHtml);
+    // Get user template for PDF generation
+    const userTemplate = await InvoiceTemplate.findOne({
+      userId: user._id,
+      isDefault: true
+    });
+    const template = userTemplate || DEFAULT_TEMPLATE;
+
+    // Generate PDF attachment with @react-pdf/renderer
+    const pdfBuffer = await generateInvoicePdf({
+      invoice,
+      client,
+      user,
+      template
+    });
 
     // Send email via Resend
+    const senderName = user.companyName || `${user.firstName} ${user.lastName}`;
     const emailResponse = await resend.emails.send({
-      from: `${user.companyName} <contact@quxly.fr>`,
+      from: `${senderName} <contact@quxly.fr>`,
       to: toEmail,
-      subject: `Facture ${invoice.invoiceNumber} - ${user.companyName}`,
+      subject: `Facture ${invoice.invoiceNumber} - ${senderName}`,
       html: htmlContent,
       text: textContent,
       attachments: [

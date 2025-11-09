@@ -23,7 +23,7 @@ export function getReminderEmailHtml(
 
   const messages = {
     friendly: {
-      title: '🔔 Rappel',
+      title: '🔔 Rappel Amical',
       greeting: `Bonjour ${clientName},`,
       body: `
         <p class="message">
@@ -35,10 +35,12 @@ export function getReminderEmailHtml(
           veuillez ignorer ce message.
         </p>
       `,
-      color: '#3b82f6',
+      color: '#667eea',
+      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      bgColor: '#f8f9fa',
     },
     firm: {
-      title: '⚠️ Relance de paiement',
+      title: '⚠️ Relance de Paiement',
       greeting: `${clientName},`,
       body: `
         <p class="message">
@@ -49,13 +51,15 @@ export function getReminderEmailHtml(
           Nous vous remercions de bien vouloir procéder au règlement dans les plus brefs délais.
         </p>
       `,
-      color: '#f59e0b',
+      color: '#9333ea',
+      gradient: 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)',
+      bgColor: '#faf5ff',
     },
     final: {
-      title: '🚨 Dernière relance',
+      title: '🚨 Dernière Relance',
       greeting: `${clientName},`,
       body: `
-        <p class="message" style="color: #dc2626; font-weight: 500;">
+        <p class="message" style="color: #991b1b; font-weight: 500;">
           Ceci est notre dernière relance concernant la facture <strong>${invoiceNumber}</strong>.
         </p>
         <p class="message">
@@ -63,7 +67,9 @@ export function getReminderEmailHtml(
           procédures de recouvrement, ce que nous souhaitons éviter.
         </p>
       `,
-      color: '#dc2626',
+      color: '#be185d',
+      gradient: 'linear-gradient(135deg, #be185d 0%, #9f1239 100%)',
+      bgColor: '#fef2f2',
     },
   };
 
@@ -90,10 +96,11 @@ export function getReminderEmailHtml(
       background-color: #ffffff;
     }
     .header {
-      background-color: ${config.color};
+      background: ${config.gradient};
       padding: 40px 30px;
       text-align: center;
       color: white;
+      box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
     }
     .header h1 {
       margin: 0;
@@ -114,7 +121,7 @@ export function getReminderEmailHtml(
       margin-bottom: 20px;
     }
     .alert-box {
-      background-color: #fef3c7;
+      background-color: ${config.bgColor};
       border-left: 4px solid ${config.color};
       padding: 20px;
       margin: 30px 0;
@@ -122,7 +129,7 @@ export function getReminderEmailHtml(
     }
     .alert-box p {
       margin: 0;
-      color: #92400e;
+      color: #374151;
       font-weight: 500;
     }
     .invoice-details {
@@ -155,7 +162,7 @@ export function getReminderEmailHtml(
     .cta-button {
       display: inline-block;
       padding: 14px 32px;
-      background-color: ${config.color};
+      background: ${config.gradient};
       color: white !important;
       text-decoration: none;
       border-radius: 6px;
@@ -163,6 +170,7 @@ export function getReminderEmailHtml(
       font-size: 16px;
       text-align: center;
       margin: 20px 0;
+      box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
     }
     .footer {
       background-color: #f8f9fa;

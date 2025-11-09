@@ -2,23 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import dbConnect from '@/lib/db/mongodb';
 import User from '@/models/User';
-import { userSchema } from '@/lib/validations';
 import { z } from 'zod';
+
+// Schéma minimal pour l'inscription
+const registerSchema = z.object({
+  firstName: z.string().min(1, 'Prénom requis'),
+  lastName: z.string().min(1, 'Nom requis'),
+  email: z.string().email('Email invalide'),
+  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Nettoyer les chaînes vides pour les champs optionnels
-    const cleanedBody = {
-      ...body,
-      siret: body.siret?.trim() || undefined,
-      phone: body.phone?.trim() || undefined,
-      logo: body.logo?.trim() || undefined,
-    };
-    
-    // Validation des données
-    const validatedData = userSchema.parse(cleanedBody);
+    // Validation des données minimales
+    const validatedData = registerSchema.parse(body);
     
     await dbConnect();
     
@@ -35,26 +34,17 @@ export async function POST(request: NextRequest) {
     // Hasher le mot de passe
     const hashedPassword = await bcrypt.hash(validatedData.password, 12);
     
-    // Créer l'utilisateur
+    // Créer l'utilisateur avec uniquement les champs requis
     const user = await User.create({
       email: validatedData.email.toLowerCase(),
       password: hashedPassword,
       firstName: validatedData.firstName,
       lastName: validatedData.lastName,
-      companyName: validatedData.companyName,
-      legalForm: validatedData.legalForm,
-      siret: validatedData.siret,
-      address: validatedData.address,
-      phone: validatedData.phone,
-      logo: validatedData.logo,
-      iban: validatedData.iban,
-      defaultCurrency: validatedData.defaultCurrency ?? 'EUR',
-      defaultTaxRate: validatedData.defaultTaxRate ?? 20,
-      invoiceNumbering: validatedData.invoiceNumbering ?? undefined,
+      // Les valeurs par défaut seront appliquées par le modèle
     });
     
     // Retourner l'utilisateur sans le mot de passe
-  const { password, ...userWithoutPassword } = user.toObject();
+    const { password, ...userWithoutPassword } = user.toObject();
     
     return NextResponse.json({
       message: 'Utilisateur créé avec succès',

@@ -30,7 +30,7 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, loading, onEdit, onDele
     .toUpperCase();
 
   return (
-    <Card className="group relative overflow-hidden bg-white border border-gray-200 rounded-2xl transition-all duration-200 hover:shadow-lg">
+    <Card className="group relative overflow-hidden bg-gray-900/80 backdrop-blur-lg border border-gray-700/50 rounded-xl shadow-2xl hover:shadow-indigo-500/20 hover:border-indigo-500/50 transition-all duration-200">
       {/* Barre de couleur en haut */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-600" />
       
@@ -38,16 +38,16 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, loading, onEdit, onDele
         {/* Header avec avatar */}
         <div className="flex items-start gap-4 mb-5">
           {/* Avatar avec initiales */}
-          <div className="w-14 h-14 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md flex-shrink-0">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/20 flex-shrink-0">
             {initials}
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-lg text-gray-900 truncate mb-1">
+            <h3 className="font-bold text-lg text-white truncate mb-1">
               {client.name || 'Client'}
             </h3>
             {client.companyInfo?.siret && (
-              <Badge variant="outline" className="text-xs font-semibold border-blue-200 bg-blue-50 text-blue-700 mt-2">
+              <Badge variant="outline" className="text-xs font-semibold border-blue-700/50 bg-blue-900/30 text-blue-400 mt-2">
                 <Building2 className="w-3 h-3 mr-1" />
                 SIRET: {client.companyInfo.siret}
               </Badge>
@@ -56,11 +56,11 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, loading, onEdit, onDele
         </div>
 
         {/* Actions */}
-        <div className="space-y-2 pt-4 border-t border-gray-100">
+        <div className="space-y-2 pt-4 border-t border-gray-700/50">
           {/* Voir détails - Action principale */}
           <Link href={`/dashboard/clients/${client._id}`} className="block">
             <Button
-              className="w-full rounded-xl bg-indigo-600 hover:bg-blue-700 text-white shadow-md font-semibold"
+              className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-lg shadow-indigo-500/20 font-semibold"
               disabled={loading}
             >
               <Eye className="w-4 h-4 mr-2" />
@@ -70,7 +70,7 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, loading, onEdit, onDele
 
           {/* Nouvelle facture */}
           <Button
-            className="w-full rounded-xl bg-green-600 hover:bg-green-700 text-white shadow-md font-medium"
+            className="w-full rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/20 font-medium"
             onClick={(e) => {
               e.preventDefault();
               onNewInvoice(client);
@@ -86,7 +86,7 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, loading, onEdit, onDele
             <Button
               variant="outline"
               size="sm"
-              className="rounded-xl hover:bg-blue-50 hover:text-blue-600 border-gray-300 font-medium"
+              className="rounded-xl bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-blue-900/30 hover:text-blue-400 hover:border-blue-600 font-medium"
               onClick={(e) => {
                 e.preventDefault();
                 onEdit(client);
@@ -99,7 +99,7 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, loading, onEdit, onDele
             <Button
               variant="outline"
               size="sm"
-              className="rounded-xl hover:bg-red-50 hover:text-red-600 border-gray-300 font-medium"
+              className="rounded-xl bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-red-900/30 hover:text-red-400 hover:border-red-600 font-medium"
               onClick={(e) => {
                 e.preventDefault();
                 onDelete(client._id);

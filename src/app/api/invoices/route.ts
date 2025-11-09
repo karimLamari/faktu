@@ -5,6 +5,7 @@ import Invoice from '@/models/Invoice';
 import Client from '@/models/Client';
 import { invoiceSchema } from '@/lib/validations';
 import { getNextInvoiceNumber } from '@/lib/services/invoice-numbering';
+import { checkInvoiceLimit, incrementInvoiceUsage } from '@/lib/subscription/checkAccess';
 import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
@@ -13,20 +14,66 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
   try {
+    // Vérifier la limite d'invoices
+    const { allowed, current, limit, plan } = await checkInvoiceLimit();
+    
+    if (!allowed) {
+      return NextResponse.json(
+        {
+          error: 'Limite de factures atteinte',
+          message: `Vous avez atteint votre limite de ${limit} factures ce mois-ci. Passez à Pro pour continuer.`,
+          current,
+          limit,
+          plan,
+          upgradeUrl: '/dashboard/pricing'
+        },
+        { 
+          status: 403,
+          headers: {
+            'X-Limit-Reached': 'invoices',
+            'X-Upgrade-Plan': 'pro'
+          }
+        }
+      );
+    }
+
     const body = await request.json();
     const validatedData = invoiceSchema.parse(body);
     await dbConnect();
-    const { invoiceNumber } = await getNextInvoiceNumber(session.user.id);
+    
     const client = await Client.findOne({ _id: validatedData.clientId, userId: session.user.id });
     if (!client) {
       return NextResponse.json({ error: 'Client non trouvé ou non autorisé' }, { status: 404 });
     }
+
+    const { invoiceNumber } = await getNextInvoiceNumber(session.user.id, { 
+      clientName: client.name 
+    });
+
+    // Calcul automatique de balanceDue
+    const amountPaid = typeof validatedData.amountPaid === 'number' ? validatedData.amountPaid : 0;
+    const total = validatedData.total || 0;
+    const balanceDue = Math.max(0, total - amountPaid);
+
+    // Validation métier
+    if (amountPaid > total) {
+      return NextResponse.json({ 
+        error: 'Le montant payé ne peut pas dépasser le total' 
+      }, { status: 400 });
+    }
+
     const invoice = await Invoice.create({
       ...validatedData,
       userId: session.user.id,
       invoiceNumber,
       status: 'draft',
+      amountPaid,
+      balanceDue,
     });
+
+    // Incrémenter l'usage après création réussie
+    await incrementInvoiceUsage();
+
     return NextResponse.json(invoice, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

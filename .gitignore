@@ -32,16 +32,15 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
-
+!.env.production.example
+.env.local
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# PWA generated icons (run npm run generate-icons to create)
-# Uncomment if you want to commit generated icons
-# /public/icons/*.png
-# /public/apple-touch-icon.png
-# /public/favicon.ico
+*.tar
+# PWA generated icons
+/public/icons/*.png
+/public/apple-touch-icon.png

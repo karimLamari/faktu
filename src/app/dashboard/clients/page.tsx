@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Client from '@/models/Client';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import User from '@/models/User';
 import ClientList from '@/components/clients/ClientList';
 import { redirect } from 'next/navigation';
 
@@ -12,6 +12,17 @@ export default async function ClientsPage() {
   }
   await dbConnect();
   const clients = await Client.find({ userId: session.user.id }).sort({ 'companyInfo.legalName': 1, name: 1 }).lean();
+  const user = await User.findById(session.user.id).lean() as any;
+  
+  // Vérifier si le profil est complet
+  const isProfileComplete = !!(
+    user?.companyName &&
+    user?.legalForm &&
+    user?.address?.street &&
+    user?.address?.city &&
+    user?.address?.zipCode
+  );
+  
   // Conversion ObjectId en string pour le composant client
   const clientsData = clients.map((client: any) => ({
     ...client,
@@ -19,8 +30,6 @@ export default async function ClientsPage() {
     userId: client.userId.toString(),
   }));
   return (
-    <DashboardLayout>
-      <ClientList initialClients={clientsData} />
-    </DashboardLayout>
+    <ClientList initialClients={clientsData} isProfileComplete={isProfileComplete} />
   );
 }

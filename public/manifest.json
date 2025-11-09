@@ -1,6 +1,6 @@
 {
-  "name": "FAKTU - Gestion de Factures",
-  "short_name": "FAKTU",
+  "name": "blink - Gestion de Factures",
+  "short_name": "blink",
   "description": "Application complète de gestion de factures pour freelances et petites entreprises",
   "start_url": "/dashboard",
   "display": "standalone",

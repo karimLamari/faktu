@@ -10,7 +10,6 @@ export interface IClientAddress {
 export interface ICompanyInfo {
   legalName?: string;
   siret?: string;
-  vatNumber?: string;
 }
 
 export interface IClient extends Document {
@@ -40,7 +39,6 @@ const ClientAddressSchema = new Schema<IClientAddress>({
 const CompanyInfoSchema = new Schema<ICompanyInfo>({
   legalName: String,
   siret: { type: String, match: /^\d{14}$/ },
-  vatNumber: String,
 }, { _id: false });
 
 const ClientSchema = new Schema<IClient>({

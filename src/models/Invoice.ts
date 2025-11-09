@@ -60,7 +60,7 @@ const ReminderSchema = new Schema<IReminder>({
 const InvoiceSchema = new Schema<IInvoice>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   clientId: { type: Schema.Types.ObjectId, ref: 'Client', required: true },
-  invoiceNumber: { type: String, required: true, unique: true },
+  invoiceNumber: { type: String, required: true },
   status: { 
     type: String, 
     enum: ['draft', 'sent', 'paid', 'overdue', 'cancelled', 'partially_paid'],
@@ -98,6 +98,6 @@ const InvoiceSchema = new Schema<IInvoice>({
 InvoiceSchema.index({ userId: 1, status: 1 });
 InvoiceSchema.index({ userId: 1, clientId: 1 });
 InvoiceSchema.index({ userId: 1, issueDate: -1 });
-InvoiceSchema.index({ invoiceNumber: 1 });
+InvoiceSchema.index({ userId: 1, invoiceNumber: 1 }, { unique: true });
 
 export default mongoose.models.Invoice || mongoose.model<IInvoice>('Invoice', InvoiceSchema);

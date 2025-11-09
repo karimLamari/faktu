@@ -2,7 +2,6 @@
 
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import DashboardOverview from '../../components/dashboard/DashboardOverview';
 
 export default function DashboardPage() {
@@ -21,8 +20,6 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardLayout>
-      <DashboardOverview />
-    </DashboardLayout>
+    <DashboardOverview />
   );
 }

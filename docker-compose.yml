@@ -1,19 +1,29 @@
 version: '3.8'
 
 services:
-  faktu-app:
+  blink-app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: faktu-invoice-app
+    container_name: blink-appR
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
-      # 🔥 LES VARIABLES SENSIBLES SERONT AJOUTÉES DANS PORTAINER
       - MONGODB_URI
-      - JWT_SECRET
+      - NEXTAUTH_URL
+      - NEXTAUTH_SECRET
+      - GOOGLE_CLIENT_ID
+      - GOOGLE_CLIENT_SECRET
       - RESEND_API_KEY
+      - NEXT_PUBLIC_APP_URL
+      - STRIPE_SECRET_KEY
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+      - STRIPE_WEBHOOK_SECRET
+      - STRIPE_PRICE_PRO
+      - STRIPE_PRICE_BUSINESS
     networks:
       - proxy-network
     healthcheck:

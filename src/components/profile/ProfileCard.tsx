@@ -19,6 +19,12 @@ export interface ProfileData {
   logo?: string;
   iban?: string;
   email?: string;
+  // Informations légales pour facturation (optionnelles)
+  rcsCity?: string;
+  capital?: number;
+  tvaNumber?: string;
+  insuranceCompany?: string;
+  insurancePolicy?: string;
 }
 
 interface ProfileCardProps {
@@ -41,16 +47,16 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
     .toUpperCase();
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden animate-fade-in">
+    <div className="bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden animate-fade-in">
       {/* Header */}
-      <div className="bg-blue-600 p-8 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24" />
+      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24" />
         
         <div className="relative flex flex-col items-center">
           {/* Logo ou initiale */}
           {profile.logo ? (
-            <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white/20 shadow-2xl mb-4">
+            <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white/30 shadow-2xl mb-4">
               <img 
                 src={profile.logo} 
                 alt="Logo" 
@@ -58,7 +64,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
               />
             </div>
           ) : (
-            <div className="w-32 h-32 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-5xl font-bold border-4 border-white/20 shadow-2xl mb-4">
+            <div className="w-32 h-32 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-5xl font-bold border-4 border-white/30 shadow-2xl mb-4">
               {initials}
             </div>
           )}
@@ -80,7 +86,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
 
           {/* Forme légale */}
           {profile.legalForm && (
-            <Badge className="bg-white/20 text-white border-white/30 mb-2">
+            <Badge className="bg-white/30 text-white border-white/40 mb-2">
               {profile.legalForm}
             </Badge>
           )}
@@ -91,44 +97,44 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
       <div className="p-8 space-y-6">
         {/* Informations de contact */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
             Informations de contact
           </h3>
           
           <div className="space-y-3">
             {profile.email && (
-              <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-xl">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-5 h-5 text-blue-600" />
+              <div className="flex items-center gap-4 p-3 bg-blue-900/30 border border-blue-700/50 rounded-xl">
+                <div className="w-10 h-10 rounded-lg bg-blue-800/50 flex items-center justify-center flex-shrink-0">
+                  <Mail className="w-5 h-5 text-blue-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-500 mb-1">Email</p>
-                  <p className="text-sm font-medium text-gray-900 truncate">{profile.email}</p>
+                  <p className="text-xs text-gray-400 mb-1">Email</p>
+                  <p className="text-sm font-medium text-white truncate">{profile.email}</p>
                 </div>
               </div>
             )}
 
             {profile.phone && (
-              <div className="flex items-center gap-4 p-3 bg-green-50 rounded-xl">
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-5 h-5 text-green-600" />
+              <div className="flex items-center gap-4 p-3 bg-green-900/30 border border-green-700/50 rounded-xl">
+                <div className="w-10 h-10 rounded-lg bg-green-800/50 flex items-center justify-center flex-shrink-0">
+                  <Phone className="w-5 h-5 text-green-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Téléphone</p>
-                  <p className="text-sm font-medium text-gray-900">{profile.phone}</p>
+                  <p className="text-xs text-gray-400 mb-1">Téléphone</p>
+                  <p className="text-sm font-medium text-white">{profile.phone}</p>
                 </div>
               </div>
             )}
 
             {displayAddress && (
-              <div className="flex items-start gap-4 p-3 bg-orange-50 rounded-xl">
-                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-orange-600" />
+              <div className="flex items-start gap-4 p-3 bg-orange-900/30 border border-orange-700/50 rounded-xl">
+                <div className="w-10 h-10 rounded-lg bg-orange-800/50 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-5 h-5 text-orange-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Adresse</p>
-                  <p className="text-sm font-medium text-gray-900">{displayAddress}</p>
+                  <p className="text-xs text-gray-400 mb-1">Adresse</p>
+                  <p className="text-sm font-medium text-white">{displayAddress}</p>
                 </div>
               </div>
             )}
@@ -137,29 +143,29 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
 
         {/* Informations légales & bancaires */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
             <FileText className="w-4 h-4" />
             Informations légales
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {profile.siret && (
-              <div className="p-4 bg-purple-50 rounded-xl border border-purple-100">
+              <div className="p-4 bg-purple-900/30 border border-purple-700/50 rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
-                  <Building2 className="w-4 h-4 text-purple-600" />
-                  <p className="text-xs text-gray-500">SIRET</p>
+                  <Building2 className="w-4 h-4 text-purple-400" />
+                  <p className="text-xs text-gray-400">SIRET</p>
                 </div>
-                <p className="text-sm font-semibold text-gray-900">{profile.siret}</p>
+                <p className="text-sm font-semibold text-white">{profile.siret}</p>
               </div>
             )}
 
             {profile.iban && (
-              <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+              <div className="p-4 bg-indigo-900/30 border border-indigo-700/50 rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="w-4 h-4 text-indigo-600" />
-                  <p className="text-xs text-gray-500">IBAN</p>
+                  <CreditCard className="w-4 h-4 text-indigo-400" />
+                  <p className="text-xs text-gray-400">IBAN</p>
                 </div>
-                <p className="text-sm font-mono font-semibold text-gray-900 truncate">{profile.iban}</p>
+                <p className="text-sm font-mono font-semibold text-white truncate">{profile.iban}</p>
               </div>
             )}
           </div>
@@ -167,7 +173,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
 
         {/* Bouton modifier */}
         <Button 
-          className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+          className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/20"
           onClick={onEdit}
         >
           <Edit className="w-5 h-5 mr-2" />

@@ -5,6 +5,6 @@ export async function GET() {
   return NextResponse.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    service: 'FAKTU Invoice App'
+    service: 'blink Invoice App'
   });
 }

@@ -9,6 +9,8 @@ import User from '@/models/User';
 import { getReminderEmailHtml, getReminderEmailText } from '@/lib/templates/reminder-email';
 import { generatePdfBuffer } from '@/lib/services/pdf-generator';
 import { InvoiceHtml } from '@/lib/templates/invoice-pdf-template';
+import { PLANS } from '@/lib/subscription/plans';
+import { isProfileComplete, getMissingProfileFields } from '@/lib/utils/profile';
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -47,6 +49,39 @@ export async function POST(req: NextRequest) {
 
     // Connect to database
     await dbConnect();
+
+    // Fetch user first to check subscription plan
+    const user: any = await User.findById(session.user.id).lean();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Utilisateur introuvable' },
+        { status: 404 }
+      );
+    }
+
+    // Check if payment reminders are allowed for this plan
+    const userPlan = user.subscription?.plan || 'free';
+    const planFeatures = PLANS[userPlan];
+    
+    if (!planFeatures.paymentReminders) {
+      return NextResponse.json(
+        {
+          error: 'Fonctionnalité non disponible',
+          message: 'Les rappels de paiement automatiques sont disponibles uniquement pour les plans Pro et Business.',
+          featureBlocked: true,
+          plan: userPlan,
+          requiredPlan: 'pro',
+          upgradeUrl: '/dashboard/pricing'
+        },
+        {
+          status: 403,
+          headers: {
+            'X-Feature-Required': 'paymentReminders',
+            'X-Upgrade-Plan': 'pro'
+          }
+        }
+      );
+    }
 
     // Fetch invoice with user verification
     const invoice: any = await Invoice.findOne({
@@ -104,13 +139,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch user (sender) information
-    const user: any = await User.findById(session.user.id).lean();
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Utilisateur introuvable' },
-        { status: 404 }
-      );
+    // Vérifier que le profil est complet
+    if (!isProfileComplete(user)) {
+      const missingFields = getMissingProfileFields(user);
+      return NextResponse.json({ 
+        error: 'Profil incomplet',
+        message: `Veuillez compléter votre profil pour envoyer des rappels. Champs manquants : ${missingFields.join(', ')}`,
+        missingFields
+      }, { status: 400 });
     }
 
     // Calculate days past due
@@ -128,7 +164,7 @@ export async function POST(req: NextRequest) {
       total: invoice.balanceDue || invoice.total,
       dueDate: invoice.dueDate.toString(),
       daysPastDue,
-      companyName: user.companyName,
+      companyName: user.companyName || `${user.firstName} ${user.lastName}`,
       customMessage,
       pdfUrl: invoice.pdfUrl,
     };
@@ -149,8 +185,9 @@ export async function POST(req: NextRequest) {
     };
 
     // Send email via Resend
+    const senderName = user.companyName || `${user.firstName} ${user.lastName}`;
     const emailResponse = await resend.emails.send({
-      from: `${user.companyName} <contact@quxly.fr>`,
+      from: `${senderName} <contact@quxly.fr>`,
       to: toEmail,
       subject: subjects[reminderType],
       html: htmlContent,

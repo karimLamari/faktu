@@ -42,6 +42,46 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     const body = await request.json();
     const validatedData = invoiceSchema.partial().parse(body);
+
+    // Recalculate totals if items are being updated
+    if (validatedData.items && validatedData.items.length > 0) {
+      let subtotal = 0;
+      let taxAmount = 0;
+
+      for (const item of validatedData.items) {
+        const itemTotal = item.quantity * item.unitPrice;
+        subtotal += itemTotal;
+        taxAmount += itemTotal * (item.taxRate / 100);
+      }
+
+      const total = subtotal + taxAmount;
+
+      validatedData.subtotal = subtotal;
+      validatedData.taxAmount = taxAmount;
+      validatedData.total = total;
+    }
+
+    // Calcul automatique de balanceDue si les champs pertinents sont modifiés
+    if (validatedData.total !== undefined || validatedData.amountPaid !== undefined) {
+      await dbConnect();
+      const existingInvoice = await Invoice.findOne({ _id: id, userId: session.user.id });
+      if (!existingInvoice) {
+        return NextResponse.json({ error: 'Facture non trouvée ou non autorisé à modifier' }, { status: 404 });
+      }
+
+      const total = validatedData.total !== undefined ? validatedData.total : existingInvoice.total;
+      const amountPaid = validatedData.amountPaid !== undefined ? validatedData.amountPaid : existingInvoice.amountPaid;
+
+      // Validation métier
+      if (amountPaid > total) {
+        return NextResponse.json({ 
+          error: 'Le montant payé ne peut pas dépasser le total' 
+        }, { status: 400 });
+      }
+
+      validatedData.balanceDue = Math.max(0, total - amountPaid);
+    }
+
     await dbConnect();
     const updatedInvoice = await Invoice.findOneAndUpdate(
       { _id: id, userId: session.user.id },

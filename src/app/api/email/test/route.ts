@@ -30,9 +30,9 @@ export async function GET(req: NextRequest) {
     console.log('🧪 Testing Resend with API key:', apiKey.substring(0, 10) + '...');
     
     const result = await resend.emails.send({
-      from: 'Test FAKTU <test@mail.faktu.com>',
+      from: 'Test blink <test@mail.blink.com>',
       to: 'mirakiramal@gmail.com', // Votre email de test
-      subject: 'Test Email from FAKTU',
+      subject: 'Test Email from blink',
       html: '<p>Ceci est un email de test pour vérifier la configuration Resend.</p>',
     });
 

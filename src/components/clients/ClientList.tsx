@@ -8,31 +8,78 @@ import ClientCard from "./ClientCard";
 import InvoiceFormModal from "../invoices/InvoiceFormModal";
 import { z } from "zod";
 import { clientSchema } from "@/lib/validations";
-import { EmptyStateButton } from "../ui/EmptyStateButton";
+import { useFormModal, useModalState, useFilters, useNotification } from "@/hooks";
+import { clientService, invoiceService } from "@/services";
+import { ManagementLayout } from '@/components/common/ManagementLayout';
+import { FiSearch } from 'react-icons/fi';
+import { Notification as NotificationComponent } from '@/components/common/Notification';
+import { Users } from 'lucide-react';
+import { UsageBar } from '@/components/subscription/UsageBar';
+import { LimitReachedModal } from '@/components/subscription/LimitReachedModal';
+import { useSubscription } from '@/hooks';
+import { PLANS } from '@/lib/subscription/plans';
 
 export type Client = z.infer<typeof clientSchema> & { _id: string };
 
 
 type ClientListProps = {
 	initialClients: Client[];
+	isProfileComplete: boolean;
 };
 
-const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
+const ClientList: React.FC<ClientListProps> = ({ initialClients, isProfileComplete }) => {
 	const [clients, setClients] = useState<Client[]>(initialClients);
-	const [search, setSearch] = useState("");
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [notif, setNotif] = useState<string | null>(null);
+	const [showLimitModal, setShowLimitModal] = useState(false);
+	const [limitModalType, setLimitModalType] = useState<'invoices' | 'quotes' | 'expenses' | 'clients'>('clients');
 	
-	// États pour l'édition de client
-	const [editClient, setEditClient] = useState<Client | null>(null);
-	const [editForm, setEditForm] = useState<Partial<Client> | null>(null);
-	const [editError, setEditError] = useState<string | null>(null);
-	const [editLoading, setEditLoading] = useState(false);
+	// Subscription
+	const { data: subscriptionData } = useSubscription();
+	const usage = subscriptionData?.usage;
+	const plan = subscriptionData?.plan;
 	
-	// États pour la création de facture
-	const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
-	const [selectedClientForInvoice, setSelectedClientForInvoice] = useState<Client | null>(null);
+	// Hooks personnalisés
+	const { showSuccess, showError, notification } = useNotification();
+	
+	// Modal d'ajout de client
+	const addModal = useFormModal<Client>({
+		onSubmit: async (data) => {
+			// Nettoyer les données selon le type
+			const cleanedForm = { ...data };
+			if (cleanedForm.type === 'individual') {
+				delete cleanedForm.companyInfo;
+			} else if (cleanedForm.type === 'business') {
+				delete cleanedForm.firstName;
+				delete cleanedForm.lastName;
+			}
+			
+			try {
+				const saved = await clientService.create(cleanedForm);
+				setClients((prev) => [saved, ...prev]);
+				showSuccess('Client ajouté avec succès');
+			} catch (error: any) {
+				if (error.response?.data?.limitReached) {
+					showError(error.response.data.error || 'Limite de clients atteinte');
+					setLimitModalType('clients');
+					setShowLimitModal(true);
+				}
+				throw error;
+			}
+		},
+		initialValues: { type: 'individual', paymentTerms: 30, isActive: true },
+	});
+	
+	// Modal d'édition de client
+	const editModal = useFormModal<Client>({
+		onSubmit: async (data) => {
+			if (!data._id) return;
+			const updated = await clientService.update(data._id, data);
+			setClients((prev) => prev.map((c) => (c._id === updated._id ? { ...c, ...updated } : c)));
+			showSuccess('Client modifié avec succès');
+		},
+	});
+	
+	// Modal de création de facture
+	const invoiceModal = useModalState<Client>();
 	const [invoiceForm, setInvoiceForm] = useState<any>({
 		clientId: "",
 		issueDate: new Date().toISOString().slice(0, 10),
@@ -49,88 +96,20 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 	});
 	const [invoiceFormError, setInvoiceFormError] = useState<string | null>(null);
 	const [invoiceFormLoading, setInvoiceFormLoading] = useState(false);
-	const openEdit = (client: Client) => {
-		setEditClient(client);
-		setEditForm({ ...client });
-		setEditError(null);
-	};
-
-	const closeEdit = () => {
-		setEditClient(null);
-		setEditForm(null);
-		setEditError(null);
-	};
-
-	const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-		if (!editForm) return;
-		const { name, value, type } = e.target;
-		if (name.startsWith('address.')) {
-			const key = name.split('.')[1];
-			setEditForm((prev) => ({ ...prev, address: { ...prev?.address, [key]: value } }));
-		} else if (name.startsWith('companyInfo.')) {
-			const key = name.split('.')[1];
-			setEditForm((prev) => ({ ...prev, companyInfo: { ...prev?.companyInfo, [key]: value } }));
-		} else if (name === 'paymentTerms') {
-			setEditForm((prev) => ({ ...prev, paymentTerms: Number(value) }));
-		} else if (name === 'isActive' && type === 'checkbox') {
-			setEditForm((prev) => ({ ...prev, isActive: (e.target as HTMLInputElement).checked }));
-		} else {
-			setEditForm((prev) => ({ ...prev, [name]: value }));
-		}
-	};
-
-	const handleEditSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!editClient || !editForm) return;
-		setEditLoading(true);
-		setEditError(null);
-		setNotif(null);
-		try {
-			const res = await fetch(`/api/clients/${editClient._id}`, {
-				method: "PATCH",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(editForm),
-			});
-			if (!res.ok) {
-				const data = await res.json();
-				throw new Error(data.error || "Erreur lors de la modification");
-			}
-			const updated = await res.json();
-			setClients((prev) => prev.map((c) => (c._id === updated._id ? { ...c, ...updated } : c)));
-			setNotif("Client modifié avec succès.");
-			closeEdit();
-		} catch (e: any) {
-			setEditError(e.message || "Erreur inconnue");
-		} finally {
-			setEditLoading(false);
-			setTimeout(() => setNotif(null), 3000);
-		}
-	};
-
-	const handleDelete = async (id: string) => {
-		if (!window.confirm("Supprimer ce client ?")) return;
-		setLoading(true);
-		setError(null);
-		setNotif(null);
-		try {
-			const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
-			if (!res.ok) {
-				const data = await res.json();
-				throw new Error(data.error || "Erreur lors de la suppression");
-			}
-			setClients((prev) => prev.filter((c) => c._id !== id));
-			setNotif("Client supprimé avec succès.");
-		} catch (e: any) {
-			setError(e.message || "Erreur inconnue");
-		} finally {
-			setLoading(false);
-			setTimeout(() => setNotif(null), 3000);
-		}
-	};
-
+	
+	// Filtres
+	const { filters, setFilter, filteredData: filteredClients } = useFilters({
+		data: clients,
+		filterFunctions: {
+			search: (client, value) => {
+				if (!value) return true;
+				return (client.name || '').toLowerCase().includes(value.toLowerCase());
+			},
+		},
+	});
+	
 	// Handler pour ouvrir le modal de création de facture
 	const handleNewInvoice = (client: Client) => {
-		setSelectedClientForInvoice(client);
 		const dueDate = new Date();
 		dueDate.setDate(dueDate.getDate() + (client.paymentTerms || 30));
 		setInvoiceForm({
@@ -138,7 +117,7 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 			clientId: client._id,
 			dueDate: dueDate.toISOString().slice(0, 10),
 		});
-		setInvoiceModalOpen(true);
+		invoiceModal.open(client);
 	};
 
 	const handleInvoiceFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -151,17 +130,9 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 		setInvoiceFormLoading(true);
 		setInvoiceFormError(null);
 		try {
-			const res = await fetch("/api/invoices", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(invoiceForm),
-			});
-			const data = await res.json();
-			if (!res.ok) {
-				throw new Error(data.error || "Erreur lors de la création de la facture");
-			}
-			setNotif("Facture créée avec succès.");
-			setInvoiceModalOpen(false);
+			await invoiceService.create(invoiceForm);
+			showSuccess('Facture créée avec succès');
+			invoiceModal.close();
 			// Réinitialiser le formulaire
 			setInvoiceForm({
 				clientId: "",
@@ -181,181 +152,123 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 			setInvoiceFormError(e.message || "Erreur inconnue");
 		} finally {
 			setInvoiceFormLoading(false);
-			setTimeout(() => setNotif(null), 3000);
 		}
 	};
+	
+	const handleDelete = async (id: string) => {
+		if (!window.confirm("Supprimer ce client ?")) return;
+		try {
+			await clientService.delete(id);
+			setClients((prev) => prev.filter((c) => c._id !== id));
+			showSuccess('Client supprimé avec succès');
+		} catch (e: any) {
+			showError(e.message || "Erreur lors de la suppression");
+		}
+	};
+	
+	// Stats pour les cards
+	const totalClients = clients.length;
+	const activeClients = clients.filter(c => c.isActive !== false).length;
+	
+	// Filtres JSX
+	const filtersComponent = (
+		<div className="bg-gray-900/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 border border-gray-700/50">
+			<div className="relative">
+				<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+					<FiSearch className="h-5 w-5 text-gray-500" />
+				</div>
+				<input
+					type="text"
+					placeholder="Rechercher un client par nom..."
+					value={filters.search || ''}
+					onChange={(e) => setFilter('search', e.target.value)}
+					className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700 text-white placeholder:text-gray-500 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+				/>
+			</div>
+		</div>
+	);
 
-	const filteredClients = clients.filter((client) =>
-		(client.name || '').toLowerCase().includes(search.toLowerCase())
-	);		// Ajout client
-		const [addOpen, setAddOpen] = useState(false);
-				  type ClientForm = Partial<Client> & { isActive?: boolean };
-				const [addForm, setAddForm] = useState<ClientForm>({ type: 'business', paymentTerms: 30, isActive: true });
-		const [addError, setAddError] = useState<string | null>(null);
-		const [addLoading, setAddLoading] = useState(false);
+	return (
+		<>
+			{/* Usage Bar */}
+			{usage?.clients && plan && (
+				<div className="mb-6">
+					<UsageBar
+						current={usage.clients.current}
+						limit={usage.clients.limit}
+						label="Clients"
+						upgradeLink="/dashboard/pricing"
+					/>
+				</div>
+			)}
 
-		const openAdd = () => {
-			setAddForm({});
-			setAddError(null);
-			setAddOpen(true);
-		};
-		const closeAdd = () => {
-			setAddOpen(false);
-			setAddForm({});
-			setAddError(null);
-		};
-				const handleAddChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-					const { name, value, type } = e.target;
-					if (name.startsWith('address.')) {
-						const key = name.split('.')[1];
-						setAddForm((prev) => ({ ...prev, address: { ...prev?.address, [key]: value } }));
-					} else if (name.startsWith('companyInfo.')) {
-						const key = name.split('.')[1];
-						setAddForm((prev) => ({ ...prev, companyInfo: { ...prev?.companyInfo, [key]: value } }));
-					} else if (name === 'paymentTerms') {
-						setAddForm((prev) => ({ ...prev, paymentTerms: Number(value) }));
-					} else if (name === 'isActive' && type === 'checkbox') {
-						setAddForm((prev) => ({ ...prev, isActive: (e.target as HTMLInputElement).checked }));
-					} else {
-						setAddForm((prev) => ({ ...prev, [name]: value }));
-					}
-				};
-		const handleAddSubmit = async (e: React.FormEvent) => {
-			e.preventDefault();
-			setAddLoading(true);
-			setAddError(null);
-			try {
-				const res = await fetch('/api/clients', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(addForm),
-				});
-				const data = await res.json();
-				if (!res.ok) {
-					// Affiche les erreurs Zod détaillées si présentes
-					if (data && data.errors && Array.isArray(data.errors)) {
-						setAddError(data.errors.map((err: any) => err.message).join(' | '));
-					} else if (data.error) {
-						setAddError(data.error);
-					} else {
-						setAddError('Erreur lors de la création');
-					}
-					return;
-				}
-				setClients((prev) => [data, ...prev]);
-				setNotif('Client ajouté avec succès.');
-				closeAdd();
-			} catch (e: any) {
-				setAddError(e.message || 'Erreur inconnue');
-			} finally {
-				setAddLoading(false);
-				setTimeout(() => setNotif(null), 3000);
-			}
-		};
-
-		return (
-			<div className="space-y-6 animate-fade-in">
-				{/* Header amélioré */}
-				<div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
-					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-						<div>
-							<h1 className="text-3xl font-bold text-gray-900 mb-2">Clients</h1>
-							<p className="text-gray-600">
-								{filteredClients.length} client{filteredClients.length > 1 ? 's' : ''} 
-								{search && ` • Recherche: "${search}"`}
-							</p>
-						</div>
-						<Button 
-							onClick={openAdd} 
-							className="rounded-xl h-12 bg-green-600 hover:bg-green-700 shadow-md"
-						>
-							<span className="text-lg mr-2">+</span>
-							Nouveau client
+			<ManagementLayout
+				title="Clients"
+				subtitle={`${filteredClients.length} client${filteredClients.length > 1 ? 's' : ''} trouvé${filteredClients.length > 1 ? 's' : ''}`}
+				icon={Users}
+				buttonLabel="Nouveau client"
+				onButtonClick={() => addModal.openNew()}
+				filters={filtersComponent}
+				isEmpty={filteredClients.length === 0 && clients.length === 0}
+				emptyMessage="Aucun client pour l'instant"
+				emptyDescription="Ajoutez votre premier client pour commencer !"
+				notification={notification}
+			>
+				{filteredClients.length === 0 ? (
+					<div className="col-span-full text-center py-12 bg-gray-900/80 backdrop-blur-lg rounded-lg shadow-2xl border border-gray-700/50">
+						<p className="text-gray-300 text-lg">Aucun client trouvé</p>
+						<p className="text-gray-500 text-sm mt-2">Essayez de modifier votre recherche</p>
+						<Button onClick={() => setFilter('search', '')} className="mt-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg shadow-green-500/20">
+							Réinitialiser la recherche
 						</Button>
 					</div>
-					
-					{/* Barre de recherche */}
-					<div className="mt-4">
-						<Input
-							placeholder="🔍 Rechercher par nom..."
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							className="h-12 rounded-xl border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-						/>
-					</div>
-				</div>
-				{/* Modal ajout client */}
-				{addOpen && (
-					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
-						<div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-slide-in-up">
-							{/* Header modal */}
-							<div className="bg-green-600 p-6 text-white">
-								<h2 className="text-2xl font-bold">Nouveau client</h2>
-								<p className="text-sm text-green-100">Ajoutez un nouveau client à votre base</p>
-							</div>
-							
-							{/* Body modal */}
-							<div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-								<ClientForm
-									form={addForm}
-									onChange={handleAddChange}
-									onSubmit={handleAddSubmit}
-									loading={addLoading}
-									error={addError}
-									onCancel={closeAdd}
-									submitLabel="Ajouter le client"
-									cancelLabel="Annuler"
-								/>
-							</div>
-						</div>
-					</div>
-				)}
-			{/* Notifications */}
-			{notif && (
-				<div className="fixed top-4 right-4 z-50 animate-slide-in-up">
-					<div className="bg-green-50 border-2 border-green-500 text-green-800 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3">
-						<div className="w-2 h-2 rounded-full bg-green-500 animate-pulse-subtle" />
-						<span className="font-semibold">{notif}</span>
-					</div>
-				</div>
-			)}
-			{error && (
-				<div className="fixed top-4 right-4 z-50 animate-slide-in-up">
-					<div className="bg-red-50 border-2 border-red-500 text-red-800 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3">
-						<div className="w-2 h-2 rounded-full bg-red-500 animate-pulse-subtle" />
-						<span className="font-semibold">{error}</span>
-					</div>
-				</div>
-			)}
-			
-			{filteredClients.length === 0 ? (
-				<EmptyStateButton
-					label="Ajouter un client"
-					onClick={openAdd}
-					color="green"
-					description="Aucun client pour l'instant. Ajoutez-en un pour commencer !"
-				/>
-			) : (
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-					{filteredClients.map((client) => (
+				) : (
+					filteredClients.map((client) => (
 						<ClientCard
 							key={client._id}
 							client={client}
-							loading={loading}
-							onEdit={openEdit}
+							loading={false}
+							onEdit={editModal.openEdit}
 							onDelete={handleDelete}
 							onNewInvoice={handleNewInvoice}
 						/>
-					))}
+					))
+				)}
+			</ManagementLayout>
+
+			{/* Modal ajout client */}
+			{addModal.isOpen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
+					<div className="bg-gray-900/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-700/50 w-full max-w-2xl max-h-[90vh] overflow-hidden animate-slide-in-up">
+						{/* Header modal */}
+						<div className="bg-gradient-to-r from-green-500 to-green-600 p-6 text-white">
+							<h2 className="text-2xl font-bold">Nouveau client</h2>
+							<p className="text-sm text-green-100">Ajoutez un nouveau client à votre base</p>
+						</div>
+						
+						{/* Body modal */}
+						<div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+							<ClientForm
+								form={addModal.formData}
+								onChange={addModal.handleChange}
+								onSubmit={addModal.handleSubmit}
+								loading={addModal.loading}
+								error={addModal.error}
+								onCancel={addModal.close}
+								submitLabel="Ajouter le client"
+								cancelLabel="Annuler"
+							/>
+						</div>
+					</div>
 				</div>
 			)}
 
 			{/* Modal modification client */}
-			{editClient && editForm && (
+			{editModal.isOpen && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
-					<div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-slide-in-up">
+					<div className="bg-gray-900/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-700/50 w-full max-w-2xl max-h-[90vh] overflow-hidden animate-slide-in-up">
 						{/* Header modal */}
-						<div className="bg-blue-600 p-6 text-white">
+						<div className="bg-gradient-to-r from-indigo-500 to-blue-500 p-6 text-white">
 							<h2 className="text-2xl font-bold">Modifier le client</h2>
 							<p className="text-sm text-blue-100">Mettez à jour les informations du client</p>
 						</div>
@@ -363,12 +276,12 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 						{/* Body modal */}
 						<div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
 							<ClientForm
-								form={editForm}
-								onChange={handleEditChange}
-								onSubmit={handleEditSubmit}
-								loading={editLoading}
-								error={editError}
-								onCancel={closeEdit}
+								form={editModal.formData}
+								onChange={editModal.handleChange}
+								onSubmit={editModal.handleSubmit}
+								loading={editModal.loading}
+								error={editModal.error}
+								onCancel={editModal.close}
 								submitLabel="Enregistrer les modifications"
 								cancelLabel="Annuler"
 								isEdit
@@ -379,11 +292,11 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 			)}
 
 			{/* Modal création facture */}
-			{invoiceModalOpen && selectedClientForInvoice && (
+			{invoiceModal.isOpen && invoiceModal.data && (
 				<InvoiceFormModal
-					open={invoiceModalOpen}
+					open={invoiceModal.isOpen}
 					onClose={() => {
-						setInvoiceModalOpen(false);
+						invoiceModal.close();
 						setInvoiceFormError(null);
 					}}
 					onSubmit={handleInvoiceSubmit}
@@ -396,8 +309,20 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients }) => {
 				handleFormChange={handleInvoiceFormChange}
 				/>
 			)}
-			</div>
-		);
-	};
+
+			{/* Limit Reached Modal */}
+			{showLimitModal && subscriptionData && (
+				<LimitReachedModal
+					isOpen={showLimitModal}
+					onClose={() => setShowLimitModal(false)}
+					limitType={limitModalType}
+					currentUsage={subscriptionData.usage?.clients?.current || 0}
+					limit={subscriptionData.usage?.clients?.limit === 'unlimited' ? 999 : (subscriptionData.usage?.clients?.limit || 5)}
+					currentPlan={subscriptionData.plan}
+				/>
+			)}
+		</>
+	);
+};
 
 export default ClientList;
