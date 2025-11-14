@@ -4,8 +4,7 @@ import { IInvoice } from "@/models/Invoice";
 import { X, Download, Mail, FileText, Monitor, Tablet, Smartphone, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { generateInvoiceHtml } from "@/lib/templates/invoice-pdf-generator";
-import { DEFAULT_TEMPLATE, type TemplatePreset } from "@/lib/invoice-templates/presets";
+import { DEFAULT_TEMPLATE, type TemplatePreset } from "@/lib/invoice-templates";
 
 type ViewMode = 'desktop' | 'tablet' | 'mobile' | 'print';
 
@@ -102,12 +101,26 @@ export function InvoicePreview({
     }
 
     try {
-      return generateInvoiceHtml({
-        invoice,
-        client: clientData,
-        user: userData,
-        template,
-      });
+      // Pour la preview, on utilise une iframe avec le PDF endpoint
+      return `
+        <html>
+          <body style="margin: 0; padding: 0; height: 100vh; display: flex; align-items: center; justify-content: center; background: #f3f4f6;">
+            <div style="text-align: center; font-family: sans-serif;">
+              <p style="color: #6b7280; margin-bottom: 16px;">Prévisualisation de la facture</p>
+              <a 
+                href="/api/invoices/${invoice._id}/pdf" 
+                target="_blank"
+                style="display: inline-block; padding: 12px 24px; background: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;"
+              >
+                📄 Ouvrir le PDF
+              </a>
+              <p style="color: #9ca3af; margin-top: 12px; font-size: 14px;">
+                La prévisualisation complète s'ouvrira dans un nouvel onglet
+              </p>
+            </div>
+          </body>
+        </html>
+      `;
     } catch (error) {
       console.error('Erreur génération preview:', error);
       return `

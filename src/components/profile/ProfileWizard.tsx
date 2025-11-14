@@ -141,7 +141,7 @@ export default function ProfileWizard({
                   ${currentStep > step.number 
                     ? 'bg-green-500/20 text-green-400 border-2 border-green-500' 
                     : currentStep === step.number
-                    ? 'bg-blue-500/20 text-blue-400 border-2 border-blue-500 scale-110'
+                    ? 'bg-green-500/20 text-green-400 border-2 border-green-500 scale-110'
                     : 'bg-gray-800 text-gray-500 border-2 border-gray-700'
                   }
                 `}>
@@ -330,8 +330,8 @@ export default function ProfileWizard({
               </p>
             </div>
 
-            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-              <p className="text-blue-300 text-sm">
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+              <p className="text-gray-300 text-sm">
                 <strong>💡 Format IBAN :</strong> FR76 1234 5678 9012 3456 7890 123
               </p>
             </div>
@@ -366,8 +366,8 @@ export default function ProfileWizard({
               </p>
             </div>
 
-            <div className="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4">
-              <p className="text-orange-300 text-sm">
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+              <p className="text-gray-300 text-sm">
                 <strong>ℹ️ Optionnel :</strong> Vous pouvez passer cette étape et compléter plus tard.
               </p>
             </div>
@@ -463,7 +463,7 @@ export default function ProfileWizard({
             {currentStep < 3 ? (
               <Button
                 onClick={handleNext}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500"
+                className="bg-gradient-to-r from-green-600 to-green-600 hover:from-green-500 hover:to-green-500"
               >
                 Continuer
                 <ChevronRight className="w-4 h-4 ml-2" />

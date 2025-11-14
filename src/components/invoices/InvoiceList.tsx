@@ -23,6 +23,7 @@ import { LimitReachedModal } from "@/components/subscription/LimitReachedModal";
 import { UpgradeModal } from "@/components/subscription/UpgradeModal";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PLANS } from "@/lib/subscription/plans";
+import { FinalizeInvoiceDialog } from "./FinalizeInvoiceDialog";
 
 interface InvoiceListProps {
   initialInvoices: IInvoice[];
@@ -62,6 +63,10 @@ export function InvoiceList({ initialInvoices, clients, isProfileComplete, userD
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string>('Fonctionnalité payante');
   const [upgradeRequiredPlan, setUpgradeRequiredPlan] = useState<'pro' | 'business'>('pro');
+
+  // Finalize invoice modal state
+  const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
+  const [invoiceToFinalize, setInvoiceToFinalize] = useState<IInvoice | null>(null);
 
   // CSV Export
   const [isExporting, setIsExporting] = useState(false);
@@ -282,11 +287,38 @@ const handleExportCSV = async (format: 'simple' | 'accounting' | 'detailed') => 
   };
 
   const openEdit = (inv: IInvoice) => {
+    // Vérifier si la facture est finalisée ou envoyée
+    if (inv.isFinalized || inv.sentAt) {
+      showError(
+        inv.isFinalized 
+          ? '🔒 Facture finalisée - Modification interdite (Article L123-22 Code de commerce)'
+          : '🔒 Facture envoyée - Modification interdite (conformité légale)'
+      );
+      return;
+    }
     formModal.openEdit(inv);
   };
 
   const handleEmailSuccess = async () => {
     showSuccess("Email envoyé avec succès !");
+    // Refresh invoice data
+    try {
+      const data = await invoiceService.getAll();
+      setInvoices(data);
+    } catch (error: any) {
+      showError(error.message);
+    }
+  };
+
+  // Handler pour ouvrir le dialogue de finalisation
+  const handleOpenFinalizeDialog = (invoice: IInvoice) => {
+    setInvoiceToFinalize(invoice);
+    setShowFinalizeDialog(true);
+  };
+
+  // Handler pour finalisation réussie
+  const handleFinalizeSuccess = async () => {
+    showSuccess("✅ Facture finalisée et verrouillée avec succès !");
     // Refresh invoice data
     try {
       const data = await invoiceService.getAll();
@@ -539,6 +571,7 @@ const handleExportCSV = async (format: 'simple' | 'accounting' | 'detailed') => 
                     }}
                     onSendEmail={emailModal.open}
                     onSendReminder={reminderModal.open}
+                    onFinalize={handleOpenFinalizeDialog}
                   />
                 );
               })}
@@ -661,6 +694,20 @@ const handleExportCSV = async (format: 'simple' | 'accounting' | 'detailed') => 
           feature={upgradeFeature}
           currentPlan={(subscriptionData?.plan as any) || 'free'}
           requiredPlan={upgradeRequiredPlan}
+        />
+      )}
+
+      {/* Finalize Invoice Dialog */}
+      {showFinalizeDialog && invoiceToFinalize && (
+        <FinalizeInvoiceDialog
+          open={showFinalizeDialog}
+          onClose={() => {
+            setShowFinalizeDialog(false);
+            setInvoiceToFinalize(null);
+          }}
+          invoice={invoiceToFinalize}
+          client={clients.find(c => c._id === invoiceToFinalize.clientId?.toString())}
+          onSuccess={handleFinalizeSuccess}
         />
       )}
     </div>

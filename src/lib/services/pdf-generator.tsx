@@ -5,9 +5,9 @@
 
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
-import { InvoicePDF } from '@/lib/templates/invoice-pdf-react';
+import { InvoicePDF } from '@/lib/invoice-templates';
 import { QuotePDF } from '@/lib/templates/quote-pdf-react';
-import type { TemplatePreset } from '@/lib/invoice-templates/presets';
+import type { TemplatePreset } from '@/lib/invoice-templates';
 
 /**
  * Generate Invoice PDF Buffer

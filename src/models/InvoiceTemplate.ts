@@ -206,15 +206,24 @@ InvoiceTemplateSchema.index({ userId: 1, isDefault: 1 });
 // Middleware pre-save : S'assurer qu'il n'y a qu'un seul template par défaut par utilisateur
 InvoiceTemplateSchema.pre('save', async function(next) {
   if (this.isDefault) {
-    // Désactiver tous les autres templates par défaut de cet utilisateur
-    await mongoose.model('InvoiceTemplate').updateMany(
-      { 
-        userId: this.userId, 
-        _id: { $ne: this._id },
-        isDefault: true 
-      },
-      { $set: { isDefault: false } }
-    );
+    // Utiliser une transaction pour éviter les race conditions
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        // Désactiver tous les autres templates par défaut de cet utilisateur
+        await mongoose.model('InvoiceTemplate').updateMany(
+          { 
+            userId: this.userId, 
+            _id: { $ne: this._id },
+            isDefault: true 
+          },
+          { $set: { isDefault: false } },
+          { session }
+        );
+      });
+    } finally {
+      await session.endSession();
+    }
   }
   next();
 });

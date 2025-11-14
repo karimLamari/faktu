@@ -10,6 +10,7 @@ export { useFilters } from './useFilters';
 export { useNotification } from './useNotification';
 export { useOCR } from './useOCR';
 export { useSubscription } from './useSubscription';
+export { usePdfPreview } from './usePdfPreview';
 
 // Export des types
 export type { UseCRUDResult } from './useCRUD';

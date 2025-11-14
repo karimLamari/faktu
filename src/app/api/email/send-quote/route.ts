@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { Resend } from 'resend';
 import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Quote from '@/models/Quote';
@@ -8,11 +7,9 @@ import Client from '@/models/Client';
 import User from '@/models/User';
 import { getQuoteEmailHtml, getQuoteEmailText } from '@/lib/templates/quote-email';
 import { generateQuotePdf } from '@/lib/services/pdf-generator';
+import { sendEmailWithRetry } from '@/lib/services/email-service';
 import { isProfileComplete, getMissingProfileFields } from '@/lib/utils/profile';
 import { PLANS } from '@/lib/subscription/plans';
-
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Validation schema
 const sendQuoteSchema = z.object({
@@ -155,25 +152,20 @@ export async function POST(req: NextRequest) {
       pdfSize: `${(pdfBuffer.length / 1024).toFixed(2)} KB`,
     });
 
-    let emailResponse;
-    try {
-      emailResponse = await resend.emails.send({
-        from: `${senderName} <contact@quxly.fr>`,
-        to: toEmail,
-        subject: `Devis ${quote.quoteNumber} - ${senderName}`,
-        html: htmlContent,
-        text: textContent,
-        attachments: [
-          {
-            filename: `Devis-${quote.quoteNumber}.pdf`,
-            content: Buffer.from(pdfBuffer),
-          },
-        ],
-      });
-    } catch (resendError: any) {
-      console.error('❌ Erreur lors de l\'appel à Resend:', resendError);
-      throw new Error(`Erreur Resend: ${resendError.message || 'Impossible d\'envoyer l\'email'}`);
-    }
+    // Send email via Resend with retry logic
+    const emailResponse = await sendEmailWithRetry({
+      from: `${senderName} <contact@quxly.fr>`,
+      to: toEmail,
+      subject: `Devis ${quote.quoteNumber} - ${senderName}`,
+      html: htmlContent,
+      text: textContent,
+      attachments: [
+        {
+          filename: `Devis-${quote.quoteNumber}.pdf`,
+          content: Buffer.from(pdfBuffer),
+        },
+      ],
+    });
 
     console.log('📧 Réponse Resend:', JSON.stringify(emailResponse, null, 2));
 

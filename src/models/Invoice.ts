@@ -38,6 +38,15 @@ export interface IInvoice extends Document {
   terms?: string;
   pdfUrl?: string;
   pdfGeneratedAt?: Date;
+  // Champs de conformité légale (Article L123-22 Code de commerce)
+  isFinalized: boolean;              // Facture verrouillée et immutable
+  finalizedAt?: Date;                // Date de finalisation
+  finalizedBy?: mongoose.Types.ObjectId;  // Utilisateur ayant finalisé
+  pdfPath?: string;                  // Chemin permanent du PDF sur disque
+  pdfHash?: string;                  // SHA-256 hash pour vérification d'intégrité
+  // Soft delete pour factures finalisées
+  deletedAt?: Date;                  // Date de suppression logique
+  deletedBy?: mongoose.Types.ObjectId;    // Utilisateur ayant supprimé
   createdAt: Date;
   updatedAt: Date;
 }
@@ -92,6 +101,15 @@ const InvoiceSchema = new Schema<IInvoice>({
   terms: { type: String },
   pdfUrl: { type: String },
   pdfGeneratedAt: { type: Date },
+  // Champs de conformité légale
+  isFinalized: { type: Boolean, default: false, required: true, index: true },
+  finalizedAt: { type: Date },
+  finalizedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+  pdfPath: { type: String },  // invoices/userId/year/FAC-2025-0001.pdf
+  pdfHash: { type: String },  // SHA-256 pour vérification intégrité
+  // Soft delete
+  deletedAt: { type: Date, index: true },
+  deletedBy: { type: Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 // Indexes
@@ -99,5 +117,9 @@ InvoiceSchema.index({ userId: 1, status: 1 });
 InvoiceSchema.index({ userId: 1, clientId: 1 });
 InvoiceSchema.index({ userId: 1, issueDate: -1 });
 InvoiceSchema.index({ userId: 1, invoiceNumber: 1 }, { unique: true });
+// Indexes pour conformité légale
+InvoiceSchema.index({ userId: 1, isFinalized: 1 });
+InvoiceSchema.index({ userId: 1, deletedAt: 1 });
+InvoiceSchema.index({ isFinalized: 1, deletedAt: 1 });
 
 export default mongoose.models.Invoice || mongoose.model<IInvoice>('Invoice', InvoiceSchema);

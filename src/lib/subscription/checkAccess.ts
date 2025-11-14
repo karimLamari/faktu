@@ -77,7 +77,7 @@ export async function checkQuoteLimit(): Promise<{
   }
 
   const plan = user.subscription?.plan || 'free';
-  const limit = PLANS[plan].invoicesPerMonth; // Les quotes partagent la même limite
+  const limit = PLANS[plan].quotesPerMonth; // ✅ FIX: Use quotesPerMonth, not invoicesPerMonth
   const current = user.usage?.quotesThisMonth || 0;
 
   // Reset usage si nouveau mois (même logique que checkInvoiceLimit)

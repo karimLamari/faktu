@@ -3,10 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, Loader2, ArrowLeft, Check, Eye, Trash2 } from 'lucide-react';
-import { TemplateSelector } from '@/components/invoice-templates/TemplateSelector';
-import { TemplateCustomizer } from '@/components/invoice-templates/TemplateCustomizer';
-import { TemplatePreview } from '@/components/invoice-templates/TemplatePreview';
-import { INVOICE_TEMPLATE_PRESETS, DEFAULT_TEMPLATE, type TemplatePreset } from '@/lib/invoice-templates/presets';
+import {
+  TemplateSelector,
+  TemplateCustomizer,
+  TemplatePreview,
+  INVOICE_TEMPLATE_PRESETS,
+  DEFAULT_TEMPLATE,
+  getLegalMentionsPresetByLegalForm,
+  LEGAL_MENTIONS_PRESETS,
+  type TemplatePreset,
+} from '@/lib/invoice-templates';
 import { UsageBar } from '@/components/subscription/UsageBar';
 import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 import { useSubscription } from '@/hooks';
@@ -29,6 +35,7 @@ export default function InvoiceTemplatesPage() {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [templatesCount, setTemplatesCount] = useState(0);
   const [savedTemplates, setSavedTemplates] = useState<any[]>([]);
+  const [userLegalForm, setUserLegalForm] = useState<string>();
   
   const { data: subscriptionData } = useSubscription();
   const plan = subscriptionData?.plan;
@@ -36,7 +43,20 @@ export default function InvoiceTemplatesPage() {
   // Charger les templates existants au montage
   useEffect(() => {
     loadUserTemplates();
+    loadUserData();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      const response = await fetch('/api/user/profile');
+      if (response.ok) {
+        const { user } = await response.json();
+        setUserLegalForm(user.legalForm);
+      }
+    } catch (err) {
+      console.error('Erreur chargement données utilisateur:', err);
+    }
+  };
 
   const loadUserTemplates = async () => {
     try {
@@ -50,7 +70,16 @@ export default function InvoiceTemplatesPage() {
         // Charger le template par défaut si existant
         const defaultTemplate = templates.find((t: any) => t.isDefault);
         if (defaultTemplate) {
-          setCurrentTemplate(defaultTemplate);
+          // Créer une nouvelle référence d'objet pour forcer la mise à jour React
+          setCurrentTemplate({
+            name: defaultTemplate.name,
+            description: defaultTemplate.description || '',
+            colors: { ...defaultTemplate.colors },
+            fonts: { ...defaultTemplate.fonts, size: { ...defaultTemplate.fonts?.size } },
+            layout: { ...defaultTemplate.layout },
+            sections: { ...defaultTemplate.sections },
+            customText: { ...defaultTemplate.customText },
+          });
           setTemplateName(defaultTemplate.name);
           setSelectedPresetId('custom');
         }
@@ -69,14 +98,15 @@ export default function InvoiceTemplatesPage() {
   };
 
   const handleLoadSavedTemplate = (template: any) => {
+    // Créer une nouvelle référence d'objet pour forcer la mise à jour React
     setCurrentTemplate({
       name: template.name,
       description: template.description || '',
-      colors: template.colors,
-      fonts: template.fonts,
-      layout: template.layout,
-      sections: template.sections,
-      customText: template.customText,
+      colors: { ...template.colors },
+      fonts: { ...template.fonts, size: { ...template.fonts?.size } },
+      layout: { ...template.layout },
+      sections: { ...template.sections },
+      customText: { ...template.customText },
     });
     setTemplateName(template.name);
     setSelectedPresetId('custom');
@@ -329,6 +359,7 @@ export default function InvoiceTemplatesPage() {
                   <TemplateCustomizer
                     template={currentTemplate}
                     onChange={setCurrentTemplate}
+                    userLegalForm={userLegalForm}
                   />
                 </div>
 

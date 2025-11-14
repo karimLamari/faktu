@@ -6,8 +6,9 @@ import Client from '@/models/Client';
 import User from '@/models/User';
 import InvoiceTemplate from '@/models/InvoiceTemplate';
 import { generateInvoicePdf } from '@/lib/services/pdf-generator';
-import { DEFAULT_TEMPLATE } from '@/lib/invoice-templates/presets';
+import { DEFAULT_TEMPLATE } from '@/lib/invoice-templates';
 import { isProfileComplete, getMissingProfileFields } from '@/lib/utils/profile';
+import { validateTemplate } from '@/lib/invoice-templates';
 
 export async function GET(request: NextRequest, context: any) {
   const session = await auth();
@@ -45,14 +46,17 @@ export async function GET(request: NextRequest, context: any) {
     isDefault: true
   });
 
-  const template = userTemplate || DEFAULT_TEMPLATE;
+  const rawTemplate = userTemplate || DEFAULT_TEMPLATE;
+  
+  // Valider le template avant utilisation (fallback si invalide)
+  const template = validateTemplate(rawTemplate, DEFAULT_TEMPLATE);
 
   // Générer le PDF avec @react-pdf/renderer (remplace Puppeteer)
   const pdfBuffer = await generateInvoicePdf({
     invoice,
     client,
     user,
-    template
+    template: template as any,
   });
 
   // Convertir Buffer en Uint8Array pour NextResponse

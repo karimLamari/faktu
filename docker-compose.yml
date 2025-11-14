@@ -9,6 +9,9 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    volumes:
+      - ./contracts:/app/contracts
+      - ./invoices:/app/invoices
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1

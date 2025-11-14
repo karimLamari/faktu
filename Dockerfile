@@ -65,6 +65,10 @@ RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
     && chown -R pptruser:pptruser /home/pptruser \
     && chown -R pptruser:pptruser /app
 
+# Créer les dossiers de persistance pour les PDFs (contracts et invoices)
+RUN mkdir -p /app/contracts /app/invoices \
+    && chown -R pptruser:pptruser /app/contracts /app/invoices
+
 # Copier les fichiers nécessaires depuis le builder
 COPY --from=builder --chown=pptruser:pptruser /app/public ./public
 COPY --from=builder --chown=pptruser:pptruser /app/.next/standalone ./

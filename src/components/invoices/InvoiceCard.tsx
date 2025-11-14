@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import type { IInvoice } from "@/models/Invoice";
 import { Calendar, Euro, FileText, Mail, Bell, Trash2, Edit, Download, Lock, Palette, CheckCircle, AlertCircle, Clock, XCircle, Crown } from "lucide-react";
 import { InvoicePreview } from "./InvoicePreview";
-import { TemplatePreview } from "@/components/invoice-templates/TemplatePreview";
-import { DEFAULT_TEMPLATE, type TemplatePreset } from "@/lib/invoice-templates/presets";
+import { TemplatePreview } from "@/lib/invoice-templates";
+import { DEFAULT_TEMPLATE, type TemplatePreset } from "@/lib/invoice-templates";
+import { InvoiceStatusBadges } from "./InvoiceStatusBadge";
 
 interface InvoiceCardProps {
   invoice: IInvoice;
@@ -18,6 +19,7 @@ interface InvoiceCardProps {
   onPDF: (id: string) => void;
   onSendEmail?: (invoice: IInvoice) => void;
   onSendReminder?: (invoice: IInvoice) => void;
+  onFinalize?: (invoice: IInvoice) => void;
   isProfileComplete?: boolean;
   onProfileIncompleteClick?: () => void;
   userData?: {
@@ -60,6 +62,7 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
   onPDF,
   onSendEmail,
   onSendReminder,
+  onFinalize,
   isProfileComplete = true,
   onProfileIncompleteClick,
   userData,
@@ -206,35 +209,8 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
             <div>
               <h3 className="font-bold text-lg text-white">{invoice.invoiceNumber}</h3>
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge className={`${config.bgLight} ${config.text} border ${config.border} text-xs font-semibold flex items-center gap-1`}>
-                  <StatusIcon className="w-3 h-3" /> {invoice.status}
-                </Badge>
-                {/* Badge statut de paiement */}
-                {invoice.paymentStatus === 'paid' && (
-                  <Badge className="bg-green-900/30 text-green-400 border border-green-700/50 text-xs font-semibold flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" /> Payé
-                  </Badge>
-                )}
-                {invoice.paymentStatus === 'partially_paid' && (
-                  <Badge className="bg-orange-900/30 text-orange-400 border border-orange-700/50 text-xs font-semibold flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" /> Partiellement payé
-                  </Badge>
-                )}
-                {invoice.paymentStatus === 'pending' && invoice.status !== 'draft' && (
-                  <Badge className="bg-yellow-900/30 text-yellow-400 border border-yellow-700/50 text-xs font-semibold flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> En attente
-                  </Badge>
-                )}
-                {invoice.paymentStatus === 'overdue' && (
-                  <Badge className="bg-red-900/30 text-red-400 border border-red-700/50 text-xs font-semibold flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" /> En retard
-                  </Badge>
-                )}
-                {invoice.paymentStatus === 'cancelled' && (
-                  <Badge className="bg-gray-900/30 text-gray-400 border border-gray-700/50 text-xs font-semibold flex items-center gap-1">
-                    <XCircle className="w-3 h-3" /> Annulée
-                  </Badge>
-                )}
+                {/* Badges de statut avec priorité sur isFinalized */}
+                <InvoiceStatusBadges invoice={invoice} size="sm" />
                 {!isProfileComplete && (
                   <Badge className="bg-orange-900/30 text-orange-400 border border-orange-700/50 text-xs font-semibold">
                     <Lock className="w-3 h-3 mr-1" />
@@ -311,6 +287,18 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
 
         {/* Actions */}
         <div className="space-y-2 pt-4 border-t border-gray-700/50">
+          {/* Bouton Finaliser pour les brouillons non-finalisés */}
+          {invoice.status === 'draft' && !invoice.isFinalized && onFinalize && (
+            <Button
+              size="sm"
+              className="w-full rounded-xl shadow-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-green-500/20"
+              onClick={() => onFinalize(invoice)}
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Finaliser et verrouiller
+            </Button>
+          )}
+          
           {/* Ligne 1: Actions email en priorité */}
           {(canSendEmail || canSendReminder) && (
             <div className={`grid ${canSendEmail && canSendReminder ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
@@ -391,15 +379,29 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
           
           {/* Ligne 2: Actions secondaires */}
           <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="flex-1 rounded-xl bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-blue-900/30 hover:text-blue-400 hover:border-blue-600 transition-all font-medium"
-              onClick={() => onEdit(invoice)}
-            >
-              <Edit className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">Modifier</span>
-            </Button>
+            <div className="flex-1 relative group">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className={`w-full rounded-xl transition-all font-medium ${
+                  invoice.isFinalized || invoice.sentAt
+                    ? 'bg-gray-800/50 border-gray-700 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-blue-900/30 hover:text-blue-400 hover:border-blue-600'
+                }`}
+                onClick={() => !invoice.isFinalized && !invoice.sentAt && onEdit(invoice)}
+                disabled={invoice.isFinalized || invoice.sentAt}
+              >
+                {invoice.isFinalized || invoice.sentAt ? <Lock className="w-4 h-4 mr-1.5" /> : <Edit className="w-4 h-4 mr-1.5" />}
+                <span className="hidden sm:inline">Modifier</span>
+              </Button>
+              {(invoice.isFinalized || invoice.sentAt) && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-gray-700 shadow-lg">
+                  {invoice.isFinalized 
+                    ? '🔒 Facture finalisée - Modification interdite (Article L123-22 Code de commerce)'
+                    : '🔒 Facture envoyée - Modification interdite (conformité légale)'}
+                </div>
+              )}
+            </div>
             <div className="flex-1 relative group">
               {(() => {
                 const pdfStatus = getActionStatus('pdf');
@@ -432,14 +434,26 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
                 );
               })()}
             </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="rounded-xl bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-red-900/30 hover:text-red-400 hover:border-red-600 transition-all px-3"
-              onClick={() => onDelete(invoice)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            <div className="relative group">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className={`rounded-xl transition-all px-3 ${
+                  invoice.isFinalized
+                    ? 'bg-gray-800/50 border-gray-700 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-red-900/30 hover:text-red-400 hover:border-red-600'
+                }`}
+                onClick={() => !invoice.isFinalized && onDelete(invoice)}
+                disabled={invoice.isFinalized}
+              >
+                {invoice.isFinalized ? <Lock className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+              </Button>
+              {invoice.isFinalized && (
+                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-gray-700 shadow-lg">
+                  🔒 Facture finalisée - Archivage légal obligatoire (10 ans)
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

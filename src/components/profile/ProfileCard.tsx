@@ -49,7 +49,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
   return (
     <div className="bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden animate-fade-in">
       {/* Header */}
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 text-white relative overflow-hidden">
+      <div className="bg-gradient-to-br from-green-600 via-green-700 to-green-800 p-8 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24" />
         
@@ -104,9 +104,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
           
           <div className="space-y-3">
             {profile.email && (
-              <div className="flex items-center gap-4 p-3 bg-blue-900/30 border border-blue-700/50 rounded-xl">
-                <div className="w-10 h-10 rounded-lg bg-blue-800/50 flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-5 h-5 text-blue-400" />
+              <div className="flex items-center gap-4 p-3 bg-green-900/30 border border-green-700/50 rounded-xl">
+                <div className="w-10 h-10 rounded-lg bg-green-800/50 flex items-center justify-center flex-shrink-0">
+                  <Mail className="w-5 h-5 text-green-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-gray-400 mb-1">Email</p>
@@ -128,9 +128,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
             )}
 
             {displayAddress && (
-              <div className="flex items-start gap-4 p-3 bg-orange-900/30 border border-orange-700/50 rounded-xl">
-                <div className="w-10 h-10 rounded-lg bg-orange-800/50 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-orange-400" />
+              <div className="flex items-start gap-4 p-3 bg-green-900/30 border border-green-700/50 rounded-xl">
+                <div className="w-10 h-10 rounded-lg bg-green-800/50 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-5 h-5 text-green-400" />
                 </div>
                 <div className="flex-1">
                   <p className="text-xs text-gray-400 mb-1">Adresse</p>
@@ -150,9 +150,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {profile.siret && (
-              <div className="p-4 bg-purple-900/30 border border-purple-700/50 rounded-xl">
+              <div className="p-4 bg-green-900/30 border border-green-700/50 rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
-                  <Building2 className="w-4 h-4 text-purple-400" />
+                  <Building2 className="w-4 h-4 text-green-400" />
                   <p className="text-xs text-gray-400">SIRET</p>
                 </div>
                 <p className="text-sm font-semibold text-white">{profile.siret}</p>
@@ -160,9 +160,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
             )}
 
             {profile.iban && (
-              <div className="p-4 bg-indigo-900/30 border border-indigo-700/50 rounded-xl">
+              <div className="p-4 bg-green-900/30 border border-green-700/50 rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="w-4 h-4 text-indigo-400" />
+                  <CreditCard className="w-4 h-4 text-green-400" />
                   <p className="text-xs text-gray-400">IBAN</p>
                 </div>
                 <p className="text-sm font-mono font-semibold text-white truncate">{profile.iban}</p>
@@ -173,7 +173,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onEdit }) => {
 
         {/* Bouton modifier */}
         <Button 
-          className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/20"
+          className="w-full h-12 rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/20"
           onClick={onEdit}
         >
           <Edit className="w-5 h-5 mr-2" />

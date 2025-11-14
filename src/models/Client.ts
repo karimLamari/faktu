@@ -12,6 +12,16 @@ export interface ICompanyInfo {
   siret?: string;
 }
 
+export interface IContract {
+  _id?: mongoose.Types.ObjectId;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  fileType: string;
+  description?: string;
+  uploadedAt: Date;
+}
+
 export interface IClient extends Document {
   userId: mongoose.Types.ObjectId;
   type: 'individual' | 'business';
@@ -22,6 +32,7 @@ export interface IClient extends Document {
   phone?: string;
   address?: IClientAddress;
   companyInfo?: ICompanyInfo;
+  contracts?: IContract[];
   paymentTerms: number;
   notes?: string;
   isActive: boolean;
@@ -41,6 +52,15 @@ const CompanyInfoSchema = new Schema<ICompanyInfo>({
   siret: { type: String, match: /^\d{14}$/ },
 }, { _id: false });
 
+const ContractSchema = new Schema<IContract>({
+  fileName: { type: String, required: true },
+  fileUrl: { type: String, required: true },
+  fileSize: { type: Number, required: true },
+  fileType: { type: String, required: true },
+  description: { type: String },
+  uploadedAt: { type: Date, default: Date.now },
+});
+
 const ClientSchema = new Schema<IClient>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   type: { type: String, enum: ['individual', 'business'], required: true },
@@ -51,6 +71,7 @@ const ClientSchema = new Schema<IClient>({
   phone: { type: String, match: /^\+?[\d\s\-()]+$/ },
   address: { type: ClientAddressSchema },
   companyInfo: { type: CompanyInfoSchema },
+  contracts: [ContractSchema],
   paymentTerms: { type: Number, default: 30, min: 0 },
   notes: { type: String },
   isActive: { type: Boolean, default: true },
@@ -62,4 +83,9 @@ ClientSchema.index({ email: 1 });
 ClientSchema.index({ name: 1 });
 ClientSchema.index({ type: 1 });
 
-export default mongoose.models.Client || mongoose.model<IClient>('Client', ClientSchema);
+// Forcer la suppression du modèle en cache si il existe
+if (mongoose.models.Client) {
+  delete mongoose.models.Client;
+}
+
+export default mongoose.model<IClient>('Client', ClientSchema);

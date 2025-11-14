@@ -33,7 +33,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
       {/* Section Informations personnelles */}
       <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 space-y-4">
         <h3 className="font-semibold text-white flex items-center gap-2 text-lg mb-4">
-          <User className="w-5 h-5 text-blue-400" />
+          <User className="w-5 h-5 text-green-400" />
           Informations personnelles
         </h3>
         
@@ -85,7 +85,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
       {/* Section Entreprise */}
       <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 space-y-4">
         <h3 className="font-semibold text-white flex items-center gap-2 text-lg mb-4">
-          <Building2 className="w-5 h-5 text-purple-400" />
+          <Building2 className="w-5 h-5 text-green-400" />
           Informations entreprise
         </h3>
 
@@ -120,7 +120,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
               name="legalForm"
               value={profile.legalForm || ''}
               onChange={(e) => onChange(e as any)}
-              className={`flex h-10 w-full rounded-lg border bg-gray-800/50 text-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors ${
+              className={`flex h-10 w-full rounded-lg border bg-gray-800/50 text-white px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-colors ${
                 fieldErrors?.legalForm ? 'border-red-500 focus:ring-red-500' : 'border-gray-700'
               }`}
             >
@@ -257,7 +257,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
       {/* Section Coordonnées bancaires */}
       <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 space-y-4">
         <h3 className="font-semibold text-white flex items-center gap-2 text-lg mb-4">
-          <CreditCard className="w-5 h-5 text-yellow-400" />
+          <CreditCard className="w-5 h-5 text-green-400" />
           Coordonnées bancaires
         </h3>
 
@@ -277,7 +277,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
       {/* Section Informations légales */}
       <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 space-y-4">
         <h3 className="font-semibold text-white flex items-center gap-2 text-lg mb-4">
-          <FileText className="w-5 h-5 text-indigo-400" />
+          <FileText className="w-5 h-5 text-green-400" />
           Informations légales (optionnelles)
         </h3>
         <p className="text-sm text-gray-400 mb-4">Ces informations seront affichées dans les mentions légales de vos factures</p>
@@ -324,7 +324,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
       {/* Section Assurance */}
       <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 space-y-4">
         <h3 className="font-semibold text-white flex items-center gap-2 text-lg mb-4">
-          <Shield className="w-5 h-5 text-cyan-400" />
+          <Shield className="w-5 h-5 text-green-400" />
           Assurance RC Professionnelle (optionnelles)
         </h3>
 

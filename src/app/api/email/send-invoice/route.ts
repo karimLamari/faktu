@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { Resend } from 'resend';
 import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Invoice from '@/models/Invoice';
@@ -9,12 +8,10 @@ import Client from '@/models/Client';
 import User from '@/models/User';
 import { getInvoiceEmailHtml, getInvoiceEmailText } from '@/lib/templates/invoice-email';
 import { generateInvoicePdf } from '@/lib/services/pdf-generator';
-import { DEFAULT_TEMPLATE } from '@/lib/invoice-templates/presets';
+import { sendEmailWithRetry } from '@/lib/services/email-service';
+import { DEFAULT_TEMPLATE } from '@/lib/invoice-templates';
 import { PLANS } from '@/lib/subscription/plans';
 import { isProfileComplete, getMissingProfileFields } from '@/lib/utils/profile';
-
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Validation schema
 const sendInvoiceSchema = z.object({
@@ -147,9 +144,9 @@ export async function POST(req: NextRequest) {
       template
     });
 
-    // Send email via Resend
+    // Send email via Resend with retry logic
     const senderName = user.companyName || `${user.firstName} ${user.lastName}`;
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await sendEmailWithRetry({
       from: `${senderName} <contact@quxly.fr>`,
       to: toEmail,
       subject: `Facture ${invoice.invoiceNumber} - ${senderName}`,
@@ -167,11 +164,47 @@ export async function POST(req: NextRequest) {
       throw new Error('Erreur lors de l\'envoi de l\'email');
     }
 
-    // Update invoice with sentAt timestamp
-    await Invoice.findByIdAndUpdate(invoiceId, {
-      sentAt: new Date(),
-      status: invoice.status === 'draft' ? 'sent' : invoice.status,
-    });
+    // 🔒 FINALISER LA FACTURE APRÈS ENVOI RÉUSSI
+    // Appeler l'endpoint de finalisation interne
+    if (!invoice.isFinalized) {
+      try {
+        // Utiliser fetch interne pour appeler /finalize
+        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+        const finalizeResponse = await fetch(`${baseUrl}/api/invoices/${invoiceId}/finalize`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // Passer le token de session pour l'authentification
+            'Cookie': req.headers.get('cookie') || '',
+          },
+        });
+
+        if (!finalizeResponse.ok) {
+          console.warn('⚠️ Échec finalisation automatique:', await finalizeResponse.text());
+          // Ne pas bloquer l'envoi email si finalisation échoue
+          // Juste mettre à jour sentAt comme avant
+          await Invoice.findByIdAndUpdate(invoiceId, {
+            sentAt: new Date(),
+            status: invoice.status === 'draft' ? 'sent' : invoice.status,
+          });
+        } else {
+          console.log('✅ Facture finalisée automatiquement après envoi email');
+        }
+      } catch (finalizeError) {
+        console.error('❌ Erreur finalisation automatique:', finalizeError);
+        // Fallback: juste mettre à jour sentAt
+        await Invoice.findByIdAndUpdate(invoiceId, {
+          sentAt: new Date(),
+          status: invoice.status === 'draft' ? 'sent' : invoice.status,
+        });
+      }
+    } else {
+      // Déjà finalisée, juste mettre à jour sentAt
+      await Invoice.findByIdAndUpdate(invoiceId, {
+        sentAt: new Date(),
+        status: invoice.status === 'draft' ? 'sent' : invoice.status,
+      });
+    }
 
     return NextResponse.json({
       success: true,

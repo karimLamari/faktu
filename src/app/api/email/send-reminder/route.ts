@@ -7,8 +7,8 @@ import Invoice from '@/models/Invoice';
 import Client from '@/models/Client';
 import User from '@/models/User';
 import { getReminderEmailHtml, getReminderEmailText } from '@/lib/templates/reminder-email';
-import { generatePdfBuffer } from '@/lib/services/pdf-generator';
-import { InvoiceHtml } from '@/lib/templates/invoice-pdf-template';
+import { generateInvoicePdf } from '@/lib/services/pdf-generator';
+import { DEFAULT_TEMPLATE } from '@/lib/invoice-templates';
 import { PLANS } from '@/lib/subscription/plans';
 import { isProfileComplete, getMissingProfileFields } from '@/lib/utils/profile';
 
@@ -174,8 +174,8 @@ export async function POST(req: NextRequest) {
     const textContent = getReminderEmailText(emailData, reminderType);
 
     // Generate PDF attachment
-    const invoiceHtml = InvoiceHtml({ invoice, client, user });
-    const pdfBuffer = await generatePdfBuffer(invoiceHtml);
+    const template = DEFAULT_TEMPLATE;
+    const pdfBuffer = await generateInvoicePdf({ invoice, client, user, template });
 
     // Determine email subject based on reminder type
     const subjects = {
