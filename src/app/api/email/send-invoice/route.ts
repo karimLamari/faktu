@@ -6,7 +6,7 @@ import Invoice from '@/models/Invoice';
 import InvoiceTemplate from '@/models/InvoiceTemplate';
 import Client from '@/models/Client';
 import User from '@/models/User';
-import { getInvoiceEmailHtml, getInvoiceEmailText } from '@/lib/templates/invoice-email';
+import { getInvoiceEmailHtml, getInvoiceEmailText } from '@/lib/email-templates/invoice-email';
 import { generateInvoicePdf } from '@/lib/services/pdf-generator';
 import { sendEmailWithRetry } from '@/lib/services/email-service';
 import { DEFAULT_TEMPLATE } from '@/lib/invoice-templates';
@@ -122,6 +122,7 @@ export async function POST(req: NextRequest) {
       total: invoice.total,
       dueDate: invoice.dueDate.toString(),
       companyName: user.companyName || `${user.firstName} ${user.lastName}`,
+      customMessage,
       pdfUrl: invoice.pdfUrl,
     };
 

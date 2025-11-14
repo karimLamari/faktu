@@ -6,7 +6,7 @@
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { InvoicePDF } from '@/lib/invoice-templates';
-import { QuotePDF } from '@/lib/templates/quote-pdf-react';
+import { QuotePDF } from '@/lib/quote-templates';
 import type { TemplatePreset } from '@/lib/invoice-templates';
 
 /**

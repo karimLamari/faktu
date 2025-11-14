@@ -23,7 +23,7 @@ Font.register({
   ],
 });
 
-interface QuotePDFProps {
+export interface QuotePDFProps {
   quote: any;
   client: any;
   user: any;

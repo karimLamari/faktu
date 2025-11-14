@@ -6,7 +6,7 @@ import dbConnect from '@/lib/db/mongodb';
 import Invoice from '@/models/Invoice';
 import Client from '@/models/Client';
 import User from '@/models/User';
-import { getReminderEmailHtml, getReminderEmailText } from '@/lib/templates/reminder-email';
+import { getReminderEmailHtml, getReminderEmailText } from '@/lib/email-templates/reminder-email';
 import { generateInvoicePdf } from '@/lib/services/pdf-generator';
 import { DEFAULT_TEMPLATE } from '@/lib/invoice-templates';
 import { PLANS } from '@/lib/subscription/plans';

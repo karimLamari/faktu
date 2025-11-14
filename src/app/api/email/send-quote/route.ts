@@ -5,7 +5,7 @@ import dbConnect from '@/lib/db/mongodb';
 import Quote from '@/models/Quote';
 import Client from '@/models/Client';
 import User from '@/models/User';
-import { getQuoteEmailHtml, getQuoteEmailText } from '@/lib/templates/quote-email';
+import { getQuoteEmailHtml, getQuoteEmailText } from '@/lib/email-templates/quote-email';
 import { generateQuotePdf } from '@/lib/services/pdf-generator';
 import { sendEmailWithRetry } from '@/lib/services/email-service';
 import { isProfileComplete, getMissingProfileFields } from '@/lib/utils/profile';

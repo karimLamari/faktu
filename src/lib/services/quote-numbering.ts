@@ -1,6 +1,7 @@
 import dbConnect from '@/lib/db/mongodb';
 import Client from '@/models/Client';
 import User from '@/models/User';
+import { formatNumber } from './_shared/numbering-utils';
 
 /**
  * Generates a unique sequential quote number.
@@ -38,7 +39,7 @@ export async function getNextQuoteNumber(
   );
 
   const nextNumber = user?.quoteNumbering?.nextNumber || 1;
-  const paddedNumber = String(nextNumber).padStart(4, '0');
+  const paddedNumber = formatNumber(nextNumber);
   const quoteNumber = `${prefix}${year}-${paddedNumber}`;
 
   return { quoteNumber };

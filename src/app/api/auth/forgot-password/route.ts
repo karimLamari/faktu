@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 import dbConnect from '@/lib/db/mongodb';
 import User from '@/models/User';
 import crypto from 'crypto';
-import { getPasswordResetEmailHtml, getPasswordResetEmailText } from '@/lib/templates/password-reset-email';
+import { getPasswordResetEmailHtml, getPasswordResetEmailText } from '@/lib/email-templates/password-reset-email';
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY);

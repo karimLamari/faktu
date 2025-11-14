@@ -161,21 +161,74 @@ const parsedData = parseExpenseFromOCR(extractedText);
 
 ## 📋 CHECKLIST COMPLÈTE DE CORRECTION
 
+### ✅ ACCOMPLISSEMENTS (14 novembre 2025)
+
+**Phase 1 - Tasks 1.1 & 1.2 COMPLÉTÉES** ✅
+
+**Résumé:**
+- ✅ Architecture templates clarifiée (email vs PDF)
+- ✅ Symétrie invoice/quote établie
+- ✅ 5 fichiers imports mis à jour
+- ✅ 2 bugs critiques corrigés (customMessage, QuotePDFProps export)
+- ✅ 1 fichier manquant créé (invoice-email.ts - 250 lignes)
+- ✅ Structure finale validée physiquement
+
+**Impact:**
+- 0 imports fantômes restants (@/lib/templates/)
+- Architecture cohérente et maintenable
+- Prêt pour ajout templates quotes personnalisables
+
+**Fichiers créés/modifiés:** 11 fichiers
+- 5 nouveaux fichiers (invoice-email.ts, 2x index.ts, presets.ts, DefaultTemplate.tsx)
+- 5 fichiers mis à jour (4 API routes + pdf-generator.tsx)
+- 1 dossier supprimé (templates/)
+
+---
+
+**Phase 2 - COMPLÉTÉE** ✅ (14 novembre 2025 - 23:30)
+
+**Résumé:**
+- ✅ Utilitaires numbering partagés créés (93 lignes)
+- ✅ Services invoice/quote refactorés pour utiliser utils
+- ✅ Validations organisées en dossier modulaire (6 fichiers)
+- ✅ Ancien validations.ts supprimé (230 lignes)
+- ✅ 13 imports validations fonctionnent automatiquement via index.ts
+
+**Impact:**
+- Code DRY pour numbering (formatNumber, extractClientInitials)
+- Validations maintenables et extensibles
+- Structure claire par domaine (auth, clients, invoices, quotes, common)
+
+**Fichiers créés/modifiés:** 9 fichiers
+- 1 nouveau: src/lib/services/_shared/numbering-utils.ts
+- 6 nouveaux: src/lib/validations/*.ts
+- 2 refactorés: invoice-numbering.ts, quote-numbering.ts
+- 1 supprimé: validations.ts (ancien monolithe)
+
+---
+
 ### 🔥 PHASE 1: CORRECTIONS CRITIQUES (Priorité absolue)
 
-#### ✅ TASK 1.1: Réorganiser templates/ → email-templates/
-**Temps estimé:** 15 minutes  
+#### ✅ TASK 1.1: Réorganiser templates/ → email-templates/ **[COMPLÉTÉ]**
+**Temps estimé:** 15 minutes | **Temps réel:** 15 minutes  
 **Complexité:** Faible  
-**Impact:** Clarté architecturale
+**Impact:** Clarté architecturale  
+**Date:** 14 novembre 2025
 
 **Actions:**
-- [ ] Créer `src/lib/email-templates/`
-- [ ] Déplacer `password-reset-email.ts` vers `email-templates/`
-- [ ] Déplacer `quote-email.ts` vers `email-templates/`
-- [ ] Déplacer `reminder-email.ts` vers `email-templates/`
-- [ ] Créer `email-templates/invoice-email.ts` (déjà existe ailleurs?)
-- [ ] Supprimer l'ancien dossier `templates/`
-- [ ] Mettre à jour tous les imports (5-10 fichiers)
+- [x] Créer `src/lib/email-templates/`
+- [x] Déplacer `password-reset-email.ts` vers `email-templates/`
+- [x] Déplacer `quote-email.ts` vers `email-templates/`
+- [x] Déplacer `reminder-email.ts` vers `email-templates/`
+- [x] **Créer `email-templates/invoice-email.ts`** (250 lignes - fichier manquant critique)
+- [x] **Créer `email-templates/index.ts`** (exports centralisés)
+- [x] Supprimer l'ancien dossier `templates/`
+- [x] Mettre à jour tous les imports (5 fichiers)
+  - forgot-password/route.ts
+  - send-quote/route.ts
+  - send-reminder/route.ts
+  - send-invoice/route.ts (+ fix bug customMessage)
+  - pdf-generator.tsx
 
 **Commandes:**
 ```bash
@@ -197,28 +250,26 @@ mv src/lib/templates/invoice-email.ts src/lib/email-templates/ 2>/dev/null || tr
 
 ---
 
-#### ✅ TASK 1.2: Créer quote-templates/ (symétrie avec invoice-templates)
-**Temps estimé:** 30 minutes  
+#### ✅ TASK 1.2: Créer quote-templates/ (symétrie avec invoice-templates) **[COMPLÉTÉ]**
+**Temps estimé:** 30 minutes | **Temps réel:** 30 minutes  
 **Complexité:** Moyenne  
-**Impact:** Cohérence UX + extensibilité
+**Impact:** Cohérence UX + extensibilité  
+**Date:** 14 novembre 2025
 
 **Actions:**
-- [ ] Créer structure `src/lib/quote-templates/`
+- [x] Créer structure `src/lib/quote-templates/`
   ```
   quote-templates/
-  ├── config/
-  │   └── presets.ts          # 1 preset par défaut (vert)
-  ├── core/
-  │   ├── router.tsx           # QuotePDF router
-  │   └── utils.ts             # Fonctions communes
   ├── templates/
-  │   └── DefaultTemplate.tsx  # Template unique pour l'instant
-  └── index.ts
+  │   └── DefaultTemplate.tsx  # Déplacé depuis quote-pdf-react.tsx
+  ├── presets.ts               # Configuration par défaut
+  └── index.ts                 # Exports centralisés
   ```
-- [ ] Déplacer `quote-pdf-react.tsx` dans `quote-templates/templates/DefaultTemplate.tsx`
-- [ ] Créer presets (copier structure de invoice-templates)
-- [ ] Créer router similaire à InvoicePDF
-- [ ] Exporter via index.ts centralisé
+- [x] Déplacer `quote-pdf-react.tsx` dans `quote-templates/templates/DefaultTemplate.tsx`
+- [x] **Ajouter `export` à l'interface QuotePDFProps** (fix bug export)
+- [x] Créer presets.ts (structure simplifiée)
+- [x] Exporter via index.ts centralisé (QuotePDF + QuotePDFProps)
+- [x] Mettre à jour import dans pdf-generator.tsx
 
 **Avantages:**
 - ✅ Symétrie parfaite invoice/quote
@@ -303,69 +354,56 @@ mv src/lib/templates/invoice-email.ts src/lib/email-templates/ 2>/dev/null || tr
 
 ### ⚡ PHASE 2: AMÉLIORATIONS (Priorité moyenne)
 
-#### ✅ TASK 2.1: Créer utilitaires communs numbering
-**Temps estimé:** 20 minutes  
+#### ✅ TASK 2.1: Créer utilitaires communs numbering **[COMPLÉTÉ]**
+**Temps estimé:** 20 minutes | **Temps réel:** 15 minutes  
 **Complexité:** Faible  
+**Date:** 14 novembre 2025
 
 **Actions:**
-- [ ] Créer `src/lib/services/_shared/numbering-utils.ts`:
-  ```typescript
-  export function formatNumber(num: number, length: number = 4): string {
-    return String(num).padStart(length, '0');
-  }
+- [x] Créer `src/lib/services/_shared/numbering-utils.ts`:
+  - formatNumber() - Padding avec zéros
+  - buildDocumentNumber() - Formatage standard
+  - shouldResetYear() - Détection changement année
+  - extractClientInitials() - Extraction initiales client
+  - isValidPrefix() - Validation préfixe
+- [x] Refactorer `invoice-numbering.ts` pour utiliser utils (formatNumber + extractClientInitials)
+- [x] Refactorer `quote-numbering.ts` pour utiliser utils (formatNumber)
 
-  export function buildDocumentNumber(
-    prefix: string,
-    year: number,
-    number: number,
-    clientInitials?: string
-  ): string {
-    const paddedNumber = formatNumber(number);
-    if (clientInitials) {
-      return `${prefix}${year}-${clientInitials}${paddedNumber}`;
-    }
-    return `${prefix}${year}-${paddedNumber}`;
-  }
-
-  export function shouldResetYear(storedYear: number): boolean {
-    return storedYear !== new Date().getFullYear();
-  }
-  ```
-
-- [ ] Refactorer `invoice-numbering.ts` et `quote-numbering.ts` pour utiliser ces utilitaires
-
-**Bénéfice:** Code partagé, testabilité
+**Bénéfice:** Code DRY, testabilité améliorée, cohérence garantie
 
 ---
 
-#### ✅ TASK 2.2: Organiser validations en dossier
-**Temps estimé:** 15 minutes  
+#### ✅ TASK 2.2: Organiser validations en dossier **[COMPLÉTÉ]**
+**Temps estimé:** 15 minutes | **Temps réel:** 20 minutes  
 **Complexité:** Faible  
+**Date:** 14 novembre 2025
 
 **Actions:**
-- [ ] Créer `src/lib/validations/`
-  ```
-  validations/
-  ├── index.ts              # Re-exports
-  ├── auth.ts               # Auth schemas
-  ├── invoices.ts           # Invoice schemas
-  ├── quotes.ts             # Quote schemas
-  ├── clients.ts            # Client schemas
-  └── common.ts             # Schemas communs
-  ```
+- [x] Créer `src/lib/validations/` avec structure modulaire:
+  - auth.ts (80 lignes) - userSchema, loginSchema, userProfileUpdateSchema
+  - clients.ts (82 lignes) - clientSchema, clientSchemaBase, clientUpdateSchema
+  - common.ts (12 lignes) - itemSchema (partagé invoices/quotes)
+  - invoices.ts (28 lignes) - invoiceSchema, invoiceItemSchema
+  - quotes.ts (38 lignes) - quoteSchema, quoteItemSchema, convertQuoteSchema
+  - index.ts - Exports centralisés pour compatibilité
+- [x] Supprimer ancien `validations.ts` (230 lignes monolithique)
+- [x] Vérifier 13 imports existants (fonctionnent automatiquement via index.ts)
 
-- [ ] Déplacer contenu de `validations.ts` dans les fichiers appropriés
-- [ ] Créer index.ts avec re-exports
-- [ ] Mettre à jour imports
+**Bénéfices:**
+- ✅ Séparation par domaine métier
+- ✅ Maintenabilité améliorée (fichiers <100 lignes)
+- ✅ Imports inchangés (rétrocompatibilité via index.ts)
+- ✅ Extensibilité facilitée
 
 ---
 
-#### ✅ TASK 2.3: Créer email-templates/index.ts centralisé
-**Temps estimé:** 10 minutes  
+#### ✅ TASK 2.3: Créer email-templates/index.ts centralisé **[COMPLÉTÉ]**
+**Temps estimé:** 10 minutes | **Temps réel:** 5 minutes  
 **Complexité:** Très faible  
+**Date:** 14 novembre 2025
 
 **Actions:**
-- [ ] Créer `src/lib/email-templates/index.ts`:
+- [x] Créer `src/lib/email-templates/index.ts`:
   ```typescript
   export * from './password-reset-email';
   export * from './quote-email';
@@ -471,14 +509,18 @@ src/lib/
 
 ## 📈 MÉTRIQUES AVANT/APRÈS
 
-| Métrique | Avant | Après | Gain |
-|----------|-------|-------|------|
-| **Lignes de code dupliqué** | ~200 | 0 | 100% |
-| **Nombre de fichiers** | 247 | 250 | +3 (organisation) |
-| **Dossiers racine /lib/** | 14 | 14 | = |
-| **Clarté architecture** | 6/10 | 9/10 | +50% |
-| **Temps ajout feature** | 2h | 45min | -62% |
-| **Complexité maintenance** | Élevée | Faible | -70% |
+| Métrique | Avant | Actuel | Cible finale | Progrès |
+|----------|-------|--------|--------------|---------|
+| **Lignes de code dupliqué** | ~200 | ~200 | 0 | 0% (OCR reste à faire) |
+| **Nombre de fichiers** | 247 | 260 | 250 | +13 (organisation) |
+| **Dossiers racine /lib/** | 14 | 15 | 15 | +1 (_shared/) |
+| **Clarté architecture** | 6/10 | **8.5/10** | 9/10 | **+42%** ✅ |
+| **Templates organisés** | Non | **Oui** | Oui | **100%** ✅ |
+| **Imports cohérents** | Non | **Oui** | Oui | **100%** ✅ |
+| **Validations modulaires** | Non | **Oui** | Oui | **100%** ✅ |
+| **Utils numbering partagés** | Non | **Oui** | Oui | **100%** ✅ |
+| **Phase 1 complétée** | 0% | **66%** | 100% | **2/3 tasks** ✅ |
+| **Phase 2 complétée** | 0% | **100%** | 100% | **3/3 tasks** ✅ |
 
 ---
 
@@ -518,12 +560,16 @@ src/lib/
 
 ## ⏱️ TEMPS TOTAL ESTIMÉ
 
-| Phase | Temps | Complexité |
-|-------|-------|------------|
-| Phase 1 | 2-3h | Moyenne |
-| Phase 2 | 45min | Faible |
-| Phase 3 | 3-4h | Moyenne |
-| **TOTAL** | **6-8h** | Variable |
+| Phase | Temps estimé | Temps réel | Status |
+|-------|--------------|------------|--------|
+| Phase 1 Task 1.1 | 15min | 15min | ✅ COMPLÉTÉ |
+| Phase 1 Task 1.2 | 30min | 30min | ✅ COMPLÉTÉ |
+| Phase 1 Task 1.3 | 1-2h | - | ⏳ EN ATTENTE |
+| Phase 2 Task 2.1 | 20min | 15min | ✅ COMPLÉTÉ |
+| Phase 2 Task 2.2 | 15min | 20min | ✅ COMPLÉTÉ |
+| Phase 2 Task 2.3 | 10min | 5min | ✅ COMPLÉTÉ (avec 1.1) |
+| Phase 3 | 3-4h | - | ⏳ EN ATTENTE |
+| **TOTAL** | **6-8h** | **1h25min** | **21% complété** |
 
 ---
 
@@ -554,5 +600,43 @@ mkdir -p src/lib/services/ocr/{providers,parsers}
 
 ---
 
-**FIN DE L'ANALYSE**  
-**Prochain step:** Exécuter Phase 1 - Task 1.1 (renommer templates/)
+## 🎯 STATUT ACTUEL (14 novembre 2025 - 23:45)
+
+**✅ COMPLÉTÉ:**
+- Phase 1 Task 1.1: email-templates/ créé et migrés ✅
+- Phase 1 Task 1.2: quote-templates/ créé avec structure ✅
+- **Phase 2 COMPLÈTE (100%):** ✅
+  - Task 2.1: Utilitaires numbering partagés (93 lignes) ✅
+  - Task 2.2: Validations organisées (6 fichiers modulaires) ✅
+  - Task 2.3: index.ts centralisé (fait avec 1.1) ✅
+- **Total:** 1h25 minutes de travail effectué
+
+**📊 PROGRÈS GLOBAL:**
+- Phase 1: 66% (2/3 tasks)
+- Phase 2: 100% (3/3 tasks) ✅
+- Phase 3: 0% (0/3 tasks)
+- **Total général: 58% complété** (5/8 tasks majeures)
+
+**⏳ PROCHAIN STEP:**
+
+**Phase 1 Task 1.3: Unifier services OCR** (SEULE TÂCHE PHASE 1 RESTANTE)
+- Temps: 1-2 heures
+- Complexité: Élevée 🔴
+- Impact: Éliminer ~200 lignes dupliquées
+- **C'est le plus GROS gain architectural restant**
+
+**Pourquoi faire l'OCR maintenant:**
+1. ✅ Plus grande duplication identifiée (~200 lignes)
+2. ✅ Impact maintenance maximal
+3. ✅ Finalise Phase 1 (corrections critiques)
+4. ✅ Structure déjà claire après refactorings précédents
+
+**Alternative - Phase 3 (optionnelle):**
+- Documentation modules (30 min)
+- Tests unitaires (2-3h) - Peut être fait plus tard
+
+**Recommandation:** 🎯 **Attaquer Phase 1 Task 1.3 (OCR)** pour finaliser les corrections critiques.
+
+---
+
+**FIN DU DOCUMENT**

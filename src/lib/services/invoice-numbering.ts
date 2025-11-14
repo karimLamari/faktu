@@ -1,5 +1,6 @@
 import dbConnect from '@/lib/db/mongodb';
 import User from '@/models/User';
+import { formatNumber, extractClientInitials } from './_shared/numbering-utils';
 
 /**
  * Atomically generates the next invoice number for a given user, with yearly reset.
@@ -85,17 +86,16 @@ export async function getNextInvoiceNumber(
   // nextNumber has been incremented; actual current number for this invoice is nextNumber - 1
   const currentSequence = Math.max(1, Number(nextNumber) - 1);
   
-  // Extract client initials (first 3 letters of client name, uppercase)
+  // Extract client initials using shared utility
   let clientCode = '';
   if (opts?.clientName) {
-    clientCode = opts.clientName
-      .trim()
-      .substring(0, 3)
-      .toUpperCase()
-      .replace(/[^A-Z]/g, '') + '-';
+    const initials = extractClientInitials(opts.clientName);
+    if (initials) {
+      clientCode = initials + '-';
+    }
   }
   
-  const formatted = `${prefix}${year}-${clientCode}${String(currentSequence).padStart(4, '0')}`;
+  const formatted = `${prefix}${year}-${clientCode}${formatNumber(currentSequence)}`;
 
   return { invoiceNumber: formatted, nextNumber, year };
 }
