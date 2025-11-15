@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Expense from '@/models/Expense';
@@ -7,18 +6,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { checkExpenseLimit, incrementExpenseUsage } from '@/lib/subscription/checkAccess';
-
-// Validation schema
-const createExpenseSchema = z.object({
-  vendor: z.string().min(1, 'Le fournisseur est requis'),
-  amount: z.number().min(0, 'Le montant doit être positif'),
-  taxAmount: z.number().min(0).default(0),
-  date: z.string().or(z.date()),
-  category: z.string().min(1, 'La catégorie est requise'),
-  description: z.string().optional(),
-  invoiceNumber: z.string().optional(),
-  paymentMethod: z.string().optional(),
-});
+import { createExpenseSchema, updateExpenseSchema } from '@/lib/validations/expenses';
 
 // GET /api/expenses - List all expenses for the authenticated user
 export async function GET(request: NextRequest) {

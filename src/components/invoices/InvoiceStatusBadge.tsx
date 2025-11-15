@@ -136,31 +136,9 @@ export function InvoiceStatusBadges({ invoice }: { invoice: any }) {
         </Badge>
       )}
 
-      {/* Badge status si pertinent */}
+      {/* Badge status unique */}
       {!invoice.isFinalized && invoice.status && (
         <InvoiceStatusBadge invoice={invoice} showIcon={true} size="sm" />
-      )}
-
-      {/* Badge paiement si différent du status */}
-      {invoice.paymentStatus && invoice.paymentStatus !== 'pending' && (
-        <Badge 
-          variant="outline" 
-          className={`
-            text-xs
-            ${invoice.paymentStatus === 'paid' 
-              ? 'bg-green-900/20 border-green-700/50 text-green-400' 
-              : invoice.paymentStatus === 'overdue'
-              ? 'bg-red-900/20 border-red-700/50 text-red-400'
-              : 'bg-blue-900/20 border-blue-700/50 text-blue-400'
-            }
-          `}
-        >
-          <CreditCard className="w-3 h-3 mr-1" />
-          {invoice.paymentStatus === 'paid' ? 'Payée' : 
-           invoice.paymentStatus === 'partially_paid' ? 'Partiellement' :
-           invoice.paymentStatus === 'overdue' ? 'En retard' : 
-           invoice.paymentStatus}
-        </Badge>
       )}
     </div>
   );

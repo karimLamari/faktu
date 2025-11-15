@@ -25,18 +25,34 @@ export default async function InvoicesPage() {
     user?.address?.zipCode
   );
   
-  // Conversion ObjectId en string pour le composant
+  // Conversion ObjectId et Dates en string pour le composant
   const invoicesData = invoices.map((invoice: any) => ({
     ...invoice,
     _id: invoice._id.toString(),
     userId: invoice.userId.toString(),
     clientId: invoice.clientId?.toString() || null,
+    issueDate: invoice.issueDate ? new Date(invoice.issueDate).toISOString() : null,
+    dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString() : null,
+    createdAt: invoice.createdAt ? new Date(invoice.createdAt).toISOString() : null,
+    updatedAt: invoice.updatedAt ? new Date(invoice.updatedAt).toISOString() : null,
+    finalizedAt: invoice.finalizedAt ? new Date(invoice.finalizedAt).toISOString() : null,
+    pdfGeneratedAt: invoice.pdfGeneratedAt ? new Date(invoice.pdfGeneratedAt).toISOString() : null,
+    finalizedBy: invoice.finalizedBy ? invoice.finalizedBy.toString() : null,
   }));
   const clientsData = clients.map((client: any) => ({
     ...client,
     _id: client._id.toString(),
     userId: client.userId.toString(),
     email: client.email,
+    // Convertir les contracts si présents
+    contracts: client.contracts?.map((contract: any) => ({
+      ...contract,
+      _id: contract._id?.toString(),
+      uploadedAt: contract.uploadedAt ? new Date(contract.uploadedAt).toISOString() : null,
+    })) || [],
+    // Convertir les dates
+    createdAt: client.createdAt ? new Date(client.createdAt).toISOString() : null,
+    updatedAt: client.updatedAt ? new Date(client.updatedAt).toISOString() : null,
   }));
   
   // Préparer les données utilisateur pour le calcul de progression et l'aperçu

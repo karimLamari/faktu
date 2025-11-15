@@ -34,8 +34,16 @@ export async function GET(
       );
     }
 
-    // Trouver le contrat spécifique
-    const contract = client.contracts.id(contractId);
+    // Vérifier que le client a des contrats
+    if (!client.contracts || client.contracts.length === 0) {
+      return NextResponse.json(
+        { error: 'Aucun contrat pour ce client' },
+        { status: 404 }
+      );
+    }
+
+    // Trouver le contrat spécifique (contracts existe après vérification)
+    const contract = client.contracts!.find((c: any) => c._id?.toString() === contractId);
 
     if (!contract) {
       return NextResponse.json(
@@ -132,11 +140,13 @@ export async function DELETE(
       );
     }
 
-    console.log('🔍 Debug DELETE:', {
-      contractId,
-      contractsCount: client.contracts.length,
-      contractIds: client.contracts.map((c: any) => c._id?.toString()),
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Debug DELETE:', {
+        contractId,
+        contractsCount: client.contracts.length,
+        contractIds: client.contracts.map((c: any) => c._id?.toString()),
+      });
+    }
 
     // Trouver le contrat
     const contract = client.contracts.find((c: any) => c._id.toString() === contractId);
@@ -160,8 +170,8 @@ export async function DELETE(
       console.warn(`⚠️ Fichier déjà supprimé ou introuvable: ${contract.fileUrl}`);
     }
 
-    // Supprimer le contrat du client
-    client.contracts = client.contracts.filter((c: any) => c._id.toString() !== contractId);
+    // Supprimer le contrat du client (contracts existe déjà vérifié plus haut)
+    client.contracts = client.contracts!.filter((c: any) => c._id.toString() !== contractId);
     await client.save();
 
     return NextResponse.json({

@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Upload, Download, Trash2, File, AlertCircle, Loader2 } from 'lucide-react';
+import { useZodForm, ValidatedInput } from '@/hooks/useZodForm';
+import { contractUploadSchema } from '@/lib/validations/contracts';
 
 interface Contract {
   _id: string;
@@ -23,14 +25,31 @@ interface ContractManagerProps {
 export default function ContractManager({ clientId }: ContractManagerProps) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showUploadForm, setShowUploadForm] = useState(false);
 
-  // Form state
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [description, setDescription] = useState('');
+  // Form state with useZodForm
+  const {
+    formData,
+    errors,
+    touched,
+    isValid,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    setFieldValue,
+    reset,
+  } = useZodForm(contractUploadSchema, {
+    file: null as any, // Will be set by file input
+    description: '',
+  }, {
+    mode: 'onChange',
+  });
+
+  // États supplémentaires pour gérer le submit et les erreurs serveur
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   // Charger les contrats
   useEffect(() => {
@@ -52,42 +71,42 @@ export default function ContractManager({ clientId }: ContractManagerProps) {
   };
 
   // Upload un contrat
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFile) return;
+  const onSubmit = handleSubmit(async (validatedData) => {
+    setIsSubmitting(true);
+    setServerError(null);
+    setError('');
 
     try {
-      setUploading(true);
-      setError('');
-
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      if (description) formData.append('description', description);
+      const formDataToSend = new FormData();
+      formDataToSend.append('file', validatedData.file);
+      if (validatedData.description) {
+        formDataToSend.append('description', validatedData.description);
+      }
 
       const res = await fetch(`/api/clients/${clientId}/contracts`, {
         method: 'POST',
-        body: formData,
+        body: formDataToSend,
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Erreur upload');
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erreur upload');
       }
 
       const data = await res.json();
       setContracts(prev => [...prev, data.contract]);
       setSuccess('Contrat uploadé avec succès');
       setShowUploadForm(false);
-      setSelectedFile(null);
-      setDescription('');
+      reset();
 
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
+      setServerError(err.message);
       setError(err.message);
     } finally {
-      setUploading(false);
+      setIsSubmitting(false);
     }
-  };
+  });
 
   // Supprimer un contrat
   const handleDelete = async (contractId: string) => {
@@ -174,46 +193,67 @@ export default function ContractManager({ clientId }: ContractManagerProps) {
 
       {/* Formulaire d'upload */}
       {showUploadForm && (
-        <form onSubmit={handleUpload} className="p-4 sm:p-6 bg-purple-900/20 border-b border-purple-700/50">
+        <form onSubmit={onSubmit} className="p-4 sm:p-6 bg-purple-900/20 border-b border-purple-700/50">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Fichier (PDF, Word, Image - max 10MB)
+                Fichier <span className="text-red-400">*</span>
               </label>
               <input
                 type="file"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setFieldValue('file', file);
+                  }
+                }}
                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                required
+                className={`w-full px-4 py-2 bg-gray-800 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-white ${
+                  errors.file && touched.file
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-700'
+                }`}
               />
-              {selectedFile && (
+              {formData.file && formData.file instanceof File && (
                 <p className="mt-2 text-sm text-gray-400">
-                  {selectedFile.name} ({formatFileSize(selectedFile.size)})
+                  {formData.file.name} ({formatFileSize(formData.file.size)})
                 </p>
               )}
+              {errors.file && touched.file && (
+                <p className="mt-1 text-sm text-red-400 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.file}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                Formats acceptés : PDF, Word, JPG, PNG (max 10MB)
+              </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Description (optionnel)
-              </label>
-              <input
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Ex: Contrat de prestation 2025"
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 placeholder-gray-500"
-              />
-            </div>
+            <ValidatedInput
+              label="Description (optionnel)"
+              name="description"
+              value={formData.description || ''}
+              onChange={handleChange}
+              onBlur={() => handleBlur('description')}
+              error={errors.description}
+              touched={touched.description}
+              placeholder="Ex: Contrat de prestation 2025"
+            />
+
+            {serverError && (
+              <div className="p-3 bg-red-900/30 border border-red-700/50 rounded-lg">
+                <p className="text-sm text-red-300">{serverError}</p>
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Button
                 type="submit"
-                disabled={!selectedFile || uploading}
-                className="bg-purple-600 hover:bg-purple-700"
+                disabled={!isValid || isSubmitting}
+                className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {uploading ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Upload...
@@ -230,8 +270,7 @@ export default function ContractManager({ clientId }: ContractManagerProps) {
                 variant="outline"
                 onClick={() => {
                   setShowUploadForm(false);
-                  setSelectedFile(null);
-                  setDescription('');
+                  reset();
                 }}
               >
                 Annuler

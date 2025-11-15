@@ -4,7 +4,7 @@ import { IInvoice } from "@/models/Invoice";
 import { X, Download, Mail, FileText, Monitor, Tablet, Smartphone, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { DEFAULT_TEMPLATE, type TemplatePreset } from "@/lib/invoice-templates";
+import { DEFAULT_TEMPLATE, type TemplatePreset, TemplatePreview } from "@/lib/invoice-templates";
 
 type ViewMode = 'desktop' | 'tablet' | 'mobile' | 'print';
 
@@ -79,62 +79,6 @@ export function InvoicePreview({
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  // Génération du HTML avec le template de l'utilisateur
-  const getInvoiceHtml = () => {
-    if (loadingTemplate) {
-      return `
-        <html>
-          <body style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
-            <div style="text-align: center;">
-              <div style="width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
-              <p style="color: #6b7280;">Chargement du template...</p>
-            </div>
-            <style>
-              @keyframes spin {
-                to { transform: rotate(360deg); }
-              }
-            </style>
-          </body>
-        </html>
-      `;
-    }
-
-    try {
-      // Pour la preview, on utilise une iframe avec le PDF endpoint
-      return `
-        <html>
-          <body style="margin: 0; padding: 0; height: 100vh; display: flex; align-items: center; justify-content: center; background: #f3f4f6;">
-            <div style="text-align: center; font-family: sans-serif;">
-              <p style="color: #6b7280; margin-bottom: 16px;">Prévisualisation de la facture</p>
-              <a 
-                href="/api/invoices/${invoice._id}/pdf" 
-                target="_blank"
-                style="display: inline-block; padding: 12px 24px; background: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;"
-              >
-                📄 Ouvrir le PDF
-              </a>
-              <p style="color: #9ca3af; margin-top: 12px; font-size: 14px;">
-                La prévisualisation complète s'ouvrira dans un nouvel onglet
-              </p>
-            </div>
-          </body>
-        </html>
-      `;
-    } catch (error) {
-      console.error('Erreur génération preview:', error);
-      return `
-        <html>
-          <body style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; color: #ef4444;">
-            <div style="text-align: center;">
-              <h2>⚠️ Erreur de preview</h2>
-              <p>${error instanceof Error ? error.message : 'Erreur inconnue'}</p>
-            </div>
-          </body>
-        </html>
-      `;
-    };
-  };
 
   // Configuration des dimensions selon le mode
   const getViewDimensions = () => {
@@ -221,10 +165,10 @@ export function InvoicePreview({
           </div>
         </div>
 
-        {/* A4 Preview with iframe - Adapté selon le mode */}
+        {/* A4 Preview with TemplatePreview - Adapté selon le mode */}
         <div className="flex-1 overflow-hidden bg-gray-800 flex items-center justify-center p-4">
           <div 
-            className="bg-white shadow-2xl origin-center transition-all duration-300"
+            className="shadow-2xl origin-center transition-all duration-300"
             style={{ 
               width: dimensions.width,
               height: dimensions.height,
@@ -232,16 +176,24 @@ export function InvoicePreview({
               transformOrigin: 'center center'
             }}
           >
-            <iframe
-              srcDoc={getInvoiceHtml()}
-              className="w-full h-full border-0"
-              title="Invoice Preview"
-              sandbox="allow-same-origin allow-scripts"
-              style={{
-                width: dimensions.width,
-                height: dimensions.height
-              }}
-            />
+            {loadingTemplate ? (
+              <div className="w-full h-full bg-white flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600">Chargement du template...</p>
+                </div>
+              </div>
+            ) : (
+              <TemplatePreview
+                template={template}
+                sampleData={{
+                  invoice,
+                  client: clientData,
+                  user: userData,
+                }}
+                className="w-full h-full"
+              />
+            )}
           </div>
         </div>
 

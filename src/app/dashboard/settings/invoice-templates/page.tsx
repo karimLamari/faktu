@@ -349,7 +349,6 @@ export default function InvoiceTemplatesPage() {
               <div className="hidden lg:block lg:sticky lg:top-24 self-start">
                 <TemplatePreview
                   template={currentTemplate}
-                  loading={saving}
                 />
               </div>
 
@@ -418,7 +417,6 @@ export default function InvoiceTemplatesPage() {
               <div className="bg-white rounded-lg shadow-2xl mx-auto" style={{ maxWidth: '800px' }}>
                 <TemplatePreview
                   template={currentTemplate}
-                  loading={saving}
                 />
               </div>
             </div>

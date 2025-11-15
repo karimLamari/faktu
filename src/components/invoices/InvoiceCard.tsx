@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { IInvoice } from "@/models/Invoice";
-import { Calendar, Euro, FileText, Mail, Bell, Trash2, Edit, Download, Lock, Palette, CheckCircle, AlertCircle, Clock, XCircle, Crown } from "lucide-react";
+import { Calendar, Euro, FileText, Mail, Bell, Trash2, Edit, Download, Lock, Palette, CheckCircle, AlertCircle, Clock, XCircle, Crown, X } from "lucide-react";
 import { InvoicePreview } from "./InvoicePreview";
 import { TemplatePreview } from "@/lib/invoice-templates";
 import { DEFAULT_TEMPLATE, type TemplatePreset } from "@/lib/invoice-templates";
@@ -74,7 +74,7 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
   const [loadingTemplate, setLoadingTemplate] = useState(true);
   
   const canSendEmail = invoice.status === 'draft' || !invoice.sentAt;
-  const canSendReminder = ['sent', 'overdue', 'partially_paid'].includes(invoice.status) && invoice.paymentStatus !== 'paid';
+  const canSendReminder = ['sent', 'overdue', 'partially_paid'].includes(invoice.status) && invoice.status !== 'paid';
   const reminderCount = invoice.reminders?.length || 0;
 
   // Vérifier les permissions basées sur le plan
@@ -83,6 +83,7 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
   const hasReminderFeature = ['pro', 'business'].includes(userPlan);
   // PDF est autorisé pour tous les plans
   const hasPDFFeature = true; // Toujours true
+
 
   // Charger le template par défaut au montage
   useEffect(() => {
@@ -160,9 +161,9 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
 
   return (
     <>
-    <Card className="group relative overflow-hidden bg-gray-900/80 backdrop-blur-lg border border-gray-700/50 rounded-xl shadow-2xl hover:shadow-blue-500/20 hover:border-blue-500/50 transition-all duration-200">
+    <Card className="group relative bg-gray-900/80 backdrop-blur-lg border border-gray-700/50 rounded-xl shadow-2xl hover:shadow-blue-500/20 hover:border-blue-500/50 transition-all duration-200">
       {/* Barre de statut colorée en haut */}
-      <div className={`absolute top-0 left-0 right-0 h-1 ${config.color}`} />
+      <div className={`absolute top-0 left-0 right-0 h-1 ${config.color} rounded-t-xl`} />
       
       {/* Preview de la facture en arrière-plan */}
       <div className="relative h-40 bg-gray-800/50 overflow-hidden border-b border-gray-700/50">
@@ -181,7 +182,6 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
                 client: clientData,
                 user: userData,
               }}
-              loading={loadingTemplate}
               className="w-full h-full"
             />
           </div>
@@ -210,7 +210,7 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
               <h3 className="font-bold text-lg text-white">{invoice.invoiceNumber}</h3>
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Badges de statut avec priorité sur isFinalized */}
-                <InvoiceStatusBadges invoice={invoice} size="sm" />
+                <InvoiceStatusBadges invoice={invoice} />
                 {!isProfileComplete && (
                   <Badge className="bg-orange-900/30 text-orange-400 border border-orange-700/50 text-xs font-semibold">
                     <Lock className="w-3 h-3 mr-1" />
@@ -283,19 +283,20 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
               Envoyée le {new Date(invoice.sentAt).toLocaleDateString('fr-FR')}
             </div>
           )}
+
         </div>
 
         {/* Actions */}
         <div className="space-y-2 pt-4 border-t border-gray-700/50">
-          {/* Bouton Finaliser pour les brouillons non-finalisés */}
-          {invoice.status === 'draft' && !invoice.isFinalized && onFinalize && (
+          {/* Bouton Finaliser uniquement pour les factures PAYÉES et non encore finalisées */}
+          {invoice.status === 'paid' && !invoice.isFinalized && onFinalize && (
             <Button
               size="sm"
               className="w-full rounded-xl shadow-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-green-500/20"
               onClick={() => onFinalize(invoice)}
             >
               <Lock className="w-4 h-4 mr-2" />
-              Finaliser et verrouiller
+              Finaliser et archiver (conformité légale)
             </Button>
           )}
           
@@ -383,24 +384,41 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
               <Button 
                 size="sm" 
                 variant="outline" 
-                className={`w-full rounded-xl transition-all font-medium ${
-                  invoice.isFinalized || invoice.sentAt
-                    ? 'bg-gray-800/50 border-gray-700 text-gray-500 cursor-not-allowed'
+              className={`w-full rounded-xl transition-all font-medium ${
+                invoice.isFinalized
+                  ? 'bg-purple-900/30 border-purple-700 text-purple-300 hover:bg-purple-900/50 hover:border-purple-600'
+                  : invoice.sentAt && !invoice.isFinalized
+                    ? 'bg-orange-900/30 border-orange-700 text-orange-300 hover:bg-orange-900/50 hover:border-orange-600'
                     : 'bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-blue-900/30 hover:text-blue-400 hover:border-blue-600'
-                }`}
-                onClick={() => !invoice.isFinalized && !invoice.sentAt && onEdit(invoice)}
-                disabled={invoice.isFinalized || invoice.sentAt}
+              }`}
+              onClick={() => onEdit(invoice)}
               >
-                {invoice.isFinalized || invoice.sentAt ? <Lock className="w-4 h-4 mr-1.5" /> : <Edit className="w-4 h-4 mr-1.5" />}
-                <span className="hidden sm:inline">Modifier</span>
+                {invoice.isFinalized ? (
+                  <>
+                    <Edit className="w-4 h-4 mr-1.5" />
+                    <span className="hidden sm:inline">Statut</span>
+                  </>
+                ) : invoice.sentAt ? (
+                  <>
+                    <Edit className="w-4 h-4 mr-1.5" />
+                    <span className="hidden sm:inline">Statut</span>
+                  </>
+                ) : (
+                  <>
+                    <Edit className="w-4 h-4 mr-1.5" />
+                    <span className="hidden sm:inline">Modifier</span>
+                  </>
+                )}
               </Button>
-              {(invoice.isFinalized || invoice.sentAt) && (
+              {invoice.isFinalized ? (
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-gray-700 shadow-lg">
-                  {invoice.isFinalized 
-                    ? '🔒 Facture finalisée - Modification interdite (Article L123-22 Code de commerce)'
-                    : '🔒 Facture envoyée - Modification interdite (conformité légale)'}
+                  💰 Modifier le statut de paiement uniquement
                 </div>
-              )}
+              ) : invoice.sentAt ? (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-gray-700 shadow-lg">
+                  💰 Marquer comme payée pour finaliser ensuite
+                </div>
+              ) : null}
             </div>
             <div className="flex-1 relative group">
               {(() => {
@@ -434,59 +452,127 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
                 );
               })()}
             </div>
-            <div className="relative group">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className={`rounded-xl transition-all px-3 ${
-                  invoice.isFinalized
-                    ? 'bg-gray-800/50 border-gray-700 text-gray-500 cursor-not-allowed'
-                    : 'bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-red-900/30 hover:text-red-400 hover:border-red-600'
-                }`}
-                onClick={() => !invoice.isFinalized && onDelete(invoice)}
-                disabled={invoice.isFinalized}
-              >
-                {invoice.isFinalized ? <Lock className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
-              </Button>
-              {invoice.isFinalized && (
-                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-gray-700 shadow-lg">
-                  🔒 Facture finalisée - Archivage légal obligatoire (10 ans)
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className={`rounded-xl transition-all px-3 ${
+                invoice.isFinalized
+                  ? 'bg-gray-800/50 border-gray-700 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-red-900/30 hover:text-red-400 hover:border-red-600'
+              }`}
+              onClick={() => !invoice.isFinalized && onDelete(invoice)}
+              disabled={invoice.isFinalized}
+            >
+              {invoice.isFinalized ? <Lock className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Tooltip finalisée - Enfant direct de Card */}
+      {invoice.isFinalized && (
+        <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-20 border border-gray-700 shadow-lg text-center pointer-events-none">
+          <div className="whitespace-nowrap">🔒 Facture finalisée</div>
+          <div className="text-gray-400 text-[10px] whitespace-nowrap">Archivage légal 10 ans</div>
+        </div>
+      )}
+    </Card>
+
+    {/* Invoice Preview Modal - Version simplifiée */}
+    {showPreview && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
+        <div className="bg-gray-900/95 backdrop-blur-lg rounded-2xl shadow-2xl w-full h-full m-4 overflow-hidden flex flex-col animate-slide-in-up border border-gray-700/50">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-700/50 bg-gradient-to-r from-indigo-900/30 to-blue-900/30 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <FileText className="w-5 h-5 text-indigo-400" />
+              <h2 className="text-lg font-semibold text-white">Aperçu Facture - {invoice.invoiceNumber}</h2>
+            </div>
+            <button
+              onClick={() => setShowPreview(false)}
+              className="text-gray-400 hover:text-gray-200 transition-colors p-2 hover:bg-gray-800/50 rounded-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Preview */}
+          <div className="flex-1 overflow-hidden bg-gray-800 flex items-center justify-center p-4">
+            <div 
+              className="shadow-2xl origin-center transition-all duration-300"
+              style={{ 
+                width: '210mm',
+                height: '297mm',
+                transform: 'scale(min(calc((100vw - 8rem) / 210mm), calc((100vh - 16rem) / 297mm)))',
+                transformOrigin: 'center center'
+              }}
+            >
+              {loadingTemplate ? (
+                <div className="w-full h-full bg-white flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600">Chargement...</p>
+                  </div>
                 </div>
+              ) : (
+                <TemplatePreview
+                  template={template}
+                  sampleData={{
+                    invoice,
+                    client: clientData,
+                    user: userData,
+                  }}
+                  className="w-full h-full"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 border-t border-gray-700/50 bg-gray-800/50 flex-shrink-0">
+            <div className="text-sm text-gray-400">
+              {!isProfileComplete && (
+                <span className="text-blue-400 font-medium flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                  Profil requis pour PDF/Email
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <Button
+                onClick={() => setShowPreview(false)}
+                className="bg-gray-700 hover:bg-gray-600 text-gray-200 w-full sm:w-auto"
+              >
+                Fermer
+              </Button>
+              {isProfileComplete && hasEmailFeature && onSendEmail && (
+                <Button
+                  onClick={() => {
+                    onSendEmail(invoice);
+                    setShowPreview(false);
+                  }}
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/20"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span className="hidden sm:inline">Envoyer</span>
+                </Button>
+              )}
+              {isProfileComplete && !!invoice._id && (
+                <Button
+                  onClick={() => {
+                    onPDF(invoice._id?.toString() || "");
+                    setShowPreview(false);
+                  }}
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/20"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">PDF</span>
+                </Button>
               )}
             </div>
           </div>
         </div>
       </div>
-    </Card>
-
-    {/* Invoice Preview Modal */}
-    {showPreview && (
-      <InvoicePreview
-        invoice={invoice}
-        clientName={clientName}
-        clientData={clientData}
-        userData={userData}
-        isOpen={showPreview}
-        onClose={() => setShowPreview(false)}
-        onDownloadPDF={
-          isProfileComplete && invoice._id // PDF toujours autorisé si profil complet
-            ? () => {
-                onPDF(invoice._id?.toString() || "");
-                setShowPreview(false);
-              }
-            : undefined
-        }
-        onSendEmail={
-          isProfileComplete && hasEmailFeature && onSendEmail
-            ? () => {
-                onSendEmail(invoice);
-                setShowPreview(false);
-              }
-            : undefined
-        }
-        isProfileComplete={isProfileComplete}
-
-      />
     )}
     </>
   );

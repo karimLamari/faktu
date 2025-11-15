@@ -1,17 +1,12 @@
 import { useState, useCallback } from 'react';
-import { createWorker } from 'tesseract.js';
-import { parseExpenseFromOCR, ParsedExpenseData } from '@/lib/services/expense-parser';
-import { preprocessImageForOCR } from '@/lib/services/image-preprocessor';
-import { processExpenseOCR, UserPlan } from '@/lib/services/ocr-provider';
+import type { ParsedExpenseData } from '@/lib/services/ocr/types';
+
+export type UserPlan = 'free' | 'pro' | 'business';
 
 export interface UseOCROptions {
   onProgress?: (progress: number) => void;
   onComplete?: (data: ParsedExpenseData) => void;
   onError?: (error: string) => void;
-  preprocessImage?: boolean; // Activer le prétraitement d'image (défaut: true)
-  languages?: string[]; // Langues OCR (défaut: ['fra', 'eng'])
-  userPlan?: UserPlan; // Plan utilisateur (FREE/PRO/BUSINESS) - détermine le provider OCR
-  useNewProvider?: boolean; // Utiliser le nouveau système OCR hybride (défaut: false pour compatibilité)
 }
 
 export interface UseOCRResult {
@@ -24,13 +19,13 @@ export interface UseOCRResult {
 }
 
 /**
- * Hook personnalisé pour gérer l'OCR de manière réutilisable
- * Gère le prétraitement d'image, Tesseract.js, et le parsing
+ * Hook personnalisé pour gérer l'OCR via l'API backend
+ * L'API backend gère automatiquement le choix du provider (Google Vision / Tesseract)
+ * selon le plan utilisateur
  * 
  * @example
  * const { processFile, isProcessing, progress, data } = useOCR({
- *   onComplete: (data) => setFormData(data),
- *   preprocessImage: true
+ *   onComplete: (data) => setFormData(data)
  * });
  */
 export function useOCR(options: UseOCROptions = {}): UseOCRResult {
@@ -38,10 +33,6 @@ export function useOCR(options: UseOCROptions = {}): UseOCRResult {
     onProgress,
     onComplete,
     onError,
-    preprocessImage = true,
-    languages = ['fra', 'eng'],
-    userPlan = 'free',
-    useNewProvider = true // Activé par défaut pour tous les nouveaux usages
   } = options;
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -61,151 +52,46 @@ export function useOCR(options: UseOCROptions = {}): UseOCRResult {
     updateProgress(0);
 
     try {
-      // Utiliser le nouveau provider OCR hybride si activé
-      if (useNewProvider && file.type.startsWith('image/')) {
-        console.log('🚀 Utilisation du nouveau système OCR hybride');
-        const result = await processExpenseOCR(file, {
-          userPlan,
-          onProgress: updateProgress,
-          preprocessImage,
-        });
+      console.log('🚀 Appel API OCR backend (système hybride)');
+      updateProgress(10);
+      
+      const formData = new FormData();
+      formData.append('file', file);
 
-        setData(result);
-        onComplete?.(result);
-        return;
+      const response = await fetch('/api/expenses/ocr', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur API OCR');
       }
 
-      // Ancien système (compatibilité)
-      const fileType = file.type;
+      updateProgress(80);
+      const result = await response.json();
+      
+      // Convertir au format ParsedExpenseData
+      const parsed: ParsedExpenseData = {
+        vendor: result.supplierName || '',
+        amount: result.amount || 0,
+        taxAmount: result.taxAmount || 0,
+        date: result.date ? new Date(result.date) : new Date(),
+        invoiceNumber: result.invoiceNumber || '',
+        confidence: result.confidence || 70,
+      };
 
-      if (fileType === 'application/pdf') {
-        await processPDF(file, updateProgress);
-      } else if (fileType.startsWith('image/')) {
-        await processImage(file, preprocessImage, languages, updateProgress);
-      } else {
-        throw new Error('Type de fichier non supporté. Utilisez une image (JPG, PNG) ou un PDF.');
-      }
+      updateProgress(100);
+      setData(parsed);
+      onComplete?.(parsed);
     } catch (err: any) {
       const errorMessage = err.message || 'Erreur lors du traitement OCR';
       setError(errorMessage);
       onError?.(errorMessage);
     } finally {
       setIsProcessing(false);
-      updateProgress(100);
     }
-  }, [preprocessImage, languages, updateProgress, onError, useNewProvider, userPlan, onComplete]);
-
-  const processImage = async (
-    file: File,
-    shouldPreprocess: boolean,
-    langs: string[],
-    updateProgress: (progress: number) => void
-  ) => {
-    let processedFile = file;
-
-    // Prétraiter l'image pour améliorer l'OCR
-    if (shouldPreprocess) {
-      updateProgress(10);
-      console.log('🖼️ Prétraitement de l\'image...');
-      processedFile = await preprocessImageForOCR(file, {
-        denoise: true,
-        sharpen: true,
-        contrast: true,
-        binarize: true,
-      });
-      console.log('✅ Image prétraitée');
-    }
-
-    // Initialiser Tesseract.js
-    updateProgress(20);
-    console.log('🔧 Initialisation de Tesseract...');
-    const worker = await createWorker(langs, 1, {
-      logger: (m) => {
-        if (m.status === 'recognizing text') {
-          const ocrProgress = 20 + (m.progress * 60); // 20% → 80%
-          updateProgress(Math.round(ocrProgress));
-        }
-      },
-    });
-
-    try {
-      // Effectuer l'OCR
-      console.log('🔍 Reconnaissance de texte en cours...');
-      const { data: { text } } = await worker.recognize(processedFile);
-      console.log('📝 Texte extrait (200 premiers caractères):', text.substring(0, 200));
-
-      updateProgress(85);
-
-      // Parser le texte
-      console.log('🧠 Parsing des données...');
-      const parsed = parseExpenseFromOCR(text);
-      console.log('✅ Données extraites:', parsed);
-
-      setData(parsed);
-      onComplete?.(parsed);
-
-      updateProgress(100);
-    } finally {
-      await worker.terminate();
-    }
-  };
-
-  const processPDF = async (
-    file: File,
-    updateProgress: (progress: number) => void
-  ) => {
-    updateProgress(10);
-
-    // Charger PDF.js
-    if (!(window as any).pdfjsLib) {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      document.head.appendChild(script);
-      
-      await new Promise((resolve, reject) => {
-        script.onload = resolve;
-        script.onerror = reject;
-      });
-    }
-
-    const pdfjsLib = (window as any).pdfjsLib;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-    updateProgress(20);
-
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    
-    let fullText = '';
-    const totalPages = pdf.numPages;
-
-    console.log('📄 PDF détecté - Nombre de pages:', totalPages);
-
-    // Extraire le texte de chaque page
-    for (let i = 1; i <= totalPages; i++) {
-      const pageProgress = 20 + ((i / totalPages) * 70); // 20% → 90%
-      updateProgress(Math.round(pageProgress));
-      
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item: any) => item.str).join(' ');
-      fullText += pageText + '\n';
-      console.log(`📃 Page ${i}/${totalPages} - Texte extrait:`, pageText.substring(0, 100) + '...');
-    }
-
-    updateProgress(95);
-
-    console.log('📝 Texte complet du PDF:', fullText.substring(0, 200));
-
-    // Parser le texte
-    const parsed = parseExpenseFromOCR(fullText);
-    console.log('✅ Données extraites du PDF:', parsed);
-
-    setData(parsed);
-    onComplete?.(parsed);
-
-    updateProgress(100);
-  };
+  }, [updateProgress, onError, onComplete]);
 
   const reset = useCallback(() => {
     setIsProcessing(false);

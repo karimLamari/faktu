@@ -117,12 +117,14 @@ export async function POST(
     client.markModified('contracts');
     await client.save();
 
-    console.log('✅ Contrat créé avec succès:', {
-      clientId: id,
-      contractId: newContract._id,
-      fileName: file.name,
-      totalContracts: client.contracts.length,
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Contrat créé avec succès:', {
+        clientId: id,
+        contractId: newContract._id,
+        fileName: file.name,
+        totalContracts: client.contracts.length,
+      });
+    }
 
     return NextResponse.json({
       success: true,

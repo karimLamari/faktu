@@ -56,37 +56,44 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // ⚠️ BLOQUER MODIFICATION SI FACTURE FINALISÉE (Article L123-22 Code de commerce)
+    // SAUF si on modifie uniquement le champ 'status' (pour suivi paiement)
     if (existingInvoice.isFinalized || existingInvoice.sentAt) {
-      // Logger la tentative de modification dans l'audit trail
-      await logInvoiceAction(
-        id,
-        session.user.id,
-        'modification_attempt',
-        session.user.id,
-        request,
-        detectInvoiceChanges(existingInvoice.toObject(), validatedData),
-        { 
-          blocked: true, 
-          reason: existingInvoice.isFinalized ? 'facture_finalisée' : 'facture_envoyée',
-          attemptedChanges: Object.keys(validatedData)
-        }
-      );
+      const modifiedFields = Object.keys(validatedData);
+      const isOnlyStatusChange = modifiedFields.length === 1 && modifiedFields[0] === 'status';
+      
+      if (!isOnlyStatusChange) {
+        // Logger la tentative de modification dans l'audit trail
+        await logInvoiceAction(
+          id,
+          session.user.id,
+          'modification_attempt',
+          session.user.id,
+          request,
+          detectInvoiceChanges(existingInvoice.toObject(), validatedData),
+          { 
+            blocked: true, 
+            reason: existingInvoice.isFinalized ? 'facture_finalisée' : 'facture_envoyée',
+            attemptedChanges: modifiedFields
+          }
+        );
 
-      return NextResponse.json({ 
-        error: 'Modification interdite par la loi',
-        message: existingInvoice.isFinalized 
-          ? 'Cette facture est finalisée et verrouillée. Modification impossible (conformité légale Article L123-22).'
-          : 'Cette facture a été envoyée au client. Pour la modifier, vous devez créer une facture d\'avoir.',
-        isFinalized: existingInvoice.isFinalized,
-        finalizedAt: existingInvoice.finalizedAt,
-        sentAt: existingInvoice.sentAt,
-      }, { 
-        status: 403,
-        headers: {
-          'X-Invoice-Finalized': existingInvoice.isFinalized ? 'true' : 'false',
-          'X-Invoice-Sent': existingInvoice.sentAt ? 'true' : 'false',
-        }
-      });
+        return NextResponse.json({ 
+          error: 'Modification interdite par la loi',
+          message: existingInvoice.isFinalized 
+            ? 'Cette facture est finalisée et verrouillée. Seul le statut peut être modifié (conformité légale Article L123-22).'
+            : 'Cette facture a été envoyée au client. Seul le statut peut être modifié.',
+          isFinalized: existingInvoice.isFinalized,
+          finalizedAt: existingInvoice.finalizedAt,
+          sentAt: existingInvoice.sentAt,
+        }, { 
+          status: 403,
+          headers: {
+            'X-Invoice-Finalized': existingInvoice.isFinalized ? 'true' : 'false',
+            'X-Invoice-Sent': existingInvoice.sentAt ? 'true' : 'false',
+          }
+        });
+      }
+      // Si c'est uniquement le status qui change, on autorise et on continue
     }
 
     // Recalculate totals if items are being updated

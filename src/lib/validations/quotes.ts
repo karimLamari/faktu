@@ -23,9 +23,15 @@ export const quoteSchema = z.object({
 });
 
 export const convertQuoteSchema = z.object({
-  issueDate: z.union([z.string(), z.date()]).optional(),
-  dueDate: z.union([z.string(), z.date()]).optional(),
-});
+  issueDate: z.string().min(1, 'Date d\'émission requise'),
+  dueDate: z.string().min(1, 'Date d\'échéance requise'),
+}).refine(
+  (data) => new Date(data.dueDate) >= new Date(data.issueDate),
+  {
+    message: 'La date d\'échéance doit être après ou égale à la date d\'émission',
+    path: ['dueDate'],
+  }
+);
 
 // Type exports
 export type QuoteFormData = z.infer<typeof quoteSchema>;

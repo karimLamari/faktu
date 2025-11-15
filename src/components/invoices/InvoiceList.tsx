@@ -287,15 +287,8 @@ const handleExportCSV = async (format: 'simple' | 'accounting' | 'detailed') => 
   };
 
   const openEdit = (inv: IInvoice) => {
-    // Vérifier si la facture est finalisée ou envoyée
-    if (inv.isFinalized || inv.sentAt) {
-      showError(
-        inv.isFinalized 
-          ? '🔒 Facture finalisée - Modification interdite (Article L123-22 Code de commerce)'
-          : '🔒 Facture envoyée - Modification interdite (conformité légale)'
-      );
-      return;
-    }
+    // Toujours ouvrir le modal, même si finalisée ou envoyée
+    // Le modal gère lui-même le mode "status only" via isStatusOnlyMode
     formModal.openEdit(inv);
   };
 
@@ -372,12 +365,12 @@ const handleExportCSV = async (format: 'simple' | 'accounting' | 'detailed') => 
     return completed;
   };
 
-  // Stats pour les cards - Utilise paymentStatus pour les paiements, status pour l'envoi
+  // Stats pour les cards - Utilise status pour tout
   const totalInvoices = invoices.length;
   const draftInvoices = invoices.filter(i => i.status === 'draft').length;
   const sentInvoices = invoices.filter(i => i.status === 'sent').length;
-  const paidInvoices = invoices.filter(i => i.paymentStatus === 'paid' || i.paymentStatus === 'partially_paid').length;
-  const overdueInvoices = invoices.filter(i => i.paymentStatus === 'overdue' || i.status === 'overdue').length;
+  const paidInvoices = invoices.filter(i => i.status === 'paid' || i.status === 'partially_paid').length;
+  const overdueInvoices = invoices.filter(i => i.status === 'overdue').length;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -555,6 +548,7 @@ const handleExportCSV = async (format: 'simple' | 'accounting' | 'detailed') => 
                     statusColor={statusColors[inv.status] || "bg-gray-100 text-gray-800"}
                     isProfileComplete={isProfileComplete}
                     userData={userData}
+                    subscriptionData={subscriptionData || undefined}
                     onProfileIncompleteClick={handleProfileIncompleteClick}
                     onEdit={openEdit}
                     onPDF={handleExportPDF}
@@ -572,6 +566,11 @@ const handleExportCSV = async (format: 'simple' | 'accounting' | 'detailed') => 
                     onSendEmail={emailModal.open}
                     onSendReminder={reminderModal.open}
                     onFinalize={handleOpenFinalizeDialog}
+                    onUpgradeRequired={(feature, plan) => {
+                      setUpgradeFeature(feature);
+                      setUpgradeRequiredPlan(plan);
+                      setShowUpgradeModal(true);
+                    }}
                   />
                 );
               })}

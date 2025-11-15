@@ -165,47 +165,12 @@ export async function POST(req: NextRequest) {
       throw new Error('Erreur lors de l\'envoi de l\'email');
     }
 
-    // 🔒 FINALISER LA FACTURE APRÈS ENVOI RÉUSSI
-    // Appeler l'endpoint de finalisation interne
-    if (!invoice.isFinalized) {
-      try {
-        // Utiliser fetch interne pour appeler /finalize
-        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-        const finalizeResponse = await fetch(`${baseUrl}/api/invoices/${invoiceId}/finalize`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // Passer le token de session pour l'authentification
-            'Cookie': req.headers.get('cookie') || '',
-          },
-        });
-
-        if (!finalizeResponse.ok) {
-          console.warn('⚠️ Échec finalisation automatique:', await finalizeResponse.text());
-          // Ne pas bloquer l'envoi email si finalisation échoue
-          // Juste mettre à jour sentAt comme avant
-          await Invoice.findByIdAndUpdate(invoiceId, {
-            sentAt: new Date(),
-            status: invoice.status === 'draft' ? 'sent' : invoice.status,
-          });
-        } else {
-          console.log('✅ Facture finalisée automatiquement après envoi email');
-        }
-      } catch (finalizeError) {
-        console.error('❌ Erreur finalisation automatique:', finalizeError);
-        // Fallback: juste mettre à jour sentAt
-        await Invoice.findByIdAndUpdate(invoiceId, {
-          sentAt: new Date(),
-          status: invoice.status === 'draft' ? 'sent' : invoice.status,
-        });
-      }
-    } else {
-      // Déjà finalisée, juste mettre à jour sentAt
-      await Invoice.findByIdAndUpdate(invoiceId, {
-        sentAt: new Date(),
-        status: invoice.status === 'draft' ? 'sent' : invoice.status,
-      });
-    }
+    // 🔒 MARQUER COMME ENVOYÉE (verrouillage pour édition)
+    // La finalisation légale se fera manuellement une fois la facture payée
+    await Invoice.findByIdAndUpdate(invoiceId, {
+      sentAt: new Date(),
+      status: invoice.status === 'draft' ? 'sent' : invoice.status,
+    });
 
     return NextResponse.json({
       success: true,

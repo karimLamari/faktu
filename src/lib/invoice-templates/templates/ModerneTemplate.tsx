@@ -284,7 +284,7 @@ export const ModerneTemplate: React.FC<ModerneTemplateProps> = ({
             <View style={styles.totalsBox}>
               <View style={styles.totalRow}>
                 <Text>Total HT:</Text>
-                <Text>{formatCurrency(invoice.totalHT)} €</Text>
+                <Text>{formatCurrency(invoice.subtotal || 0)} €</Text>
               </View>
               {Object.entries(vatByRate)
                 .filter(([_, amount]) => Number(amount) > 0)
@@ -296,7 +296,7 @@ export const ModerneTemplate: React.FC<ModerneTemplateProps> = ({
                 ))}
               <View style={styles.totalRowFinal}>
                 <Text>TOTAL TTC</Text>
-                <Text>{formatCurrency(invoice.totalTTC)} €</Text>
+                <Text>{formatCurrency(invoice.total || 0)} €</Text>
               </View>
             </View>
           </View>

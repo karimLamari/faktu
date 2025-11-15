@@ -40,8 +40,16 @@ export async function GET(request: NextRequest, context: any) {
       );
     }
 
-    // Récupérer le contrat spécifique
-    const contract = client.contracts.find(
+    // Vérifier que le client a des contrats
+    if (!client.contracts || client.contracts.length === 0) {
+      return NextResponse.json(
+        { error: 'Aucun contrat pour ce client' },
+        { status: 404 }
+      );
+    }
+
+    // Récupérer le contrat spécifique (contracts existe après vérification)
+    const contract = client.contracts!.find(
       (c: any) => c._id.toString() === contractId
     );
 

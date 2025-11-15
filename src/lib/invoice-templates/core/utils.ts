@@ -2,7 +2,7 @@
  * Common types and utilities for invoice PDF templates
  */
 
-import type { TemplatePreset } from '@/lib/invoice-templates/presets';
+import type { TemplatePreset } from '@/lib/invoice-templates/config/presets';
 
 export interface InvoiceTemplateProps {
   invoice: any;
@@ -28,15 +28,26 @@ export const calculateVATByRate = (invoice: any): { [rate: number]: number } => 
 };
 
 /**
- * Format currency
+ * Format currency for PDF (simple, reliable)
+ * toLocaleString() can be unreliable in @react-pdf/renderer
  */
 export const formatCurrency = (value: number): string => {
-  return Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 2 });
+  if (value === null || value === undefined || isNaN(value)) {
+    return '0,00';
+  }
+  const fixed = Number(value).toFixed(2);
+  // Remplacer . par , et ajouter espace tous les 3 chiffres
+  const [integer, decimal] = fixed.split('.');
+  const formattedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${formattedInteger},${decimal}`;
 };
 
 /**
- * Format percentage
+ * Format percentage for PDF
  */
 export const formatPercentage = (value: number): string => {
-  return Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 1 });
+  if (value === null || value === undefined || isNaN(value)) {
+    return '0,0';
+  }
+  return Number(value).toFixed(1).replace('.', ',');
 };

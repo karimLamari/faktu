@@ -32,7 +32,7 @@ export interface IInvoice extends Document {
   amountPaid: number;
   balanceDue: number;
   paymentMethod: 'bank_transfer' | 'check' | 'cash' | 'card' | 'online' | 'other';
-  paymentStatus: 'pending' | 'paid' | 'partially_paid' | 'overdue' | 'cancelled';
+  paymentStatus: 'pending' | 'paid' | 'partially_paid' | 'overdue' | 'cancelled';  // Synchronisé avec status
   notes?: string;
   privateNotes?: string;
   terms?: string;
@@ -121,5 +121,41 @@ InvoiceSchema.index({ userId: 1, invoiceNumber: 1 }, { unique: true });
 InvoiceSchema.index({ userId: 1, isFinalized: 1 });
 InvoiceSchema.index({ userId: 1, deletedAt: 1 });
 InvoiceSchema.index({ isFinalized: 1, deletedAt: 1 });
+
+// 🔄 Hook pour synchroniser paymentStatus depuis status (DB compatibility)
+InvoiceSchema.pre('save', function(next) {
+  if (this.isModified('status')) {
+    // Mapper status vers paymentStatus compatible
+    const mapping: Record<string, any> = {
+      'draft': 'pending',
+      'sent': 'pending',
+      'paid': 'paid',
+      'partially_paid': 'partially_paid',
+      'overdue': 'overdue',
+      'cancelled': 'cancelled'
+    };
+    
+    this.paymentStatus = mapping[this.status] || 'pending';
+  }
+  next();
+});
+
+InvoiceSchema.pre('findOneAndUpdate', function(next) {
+  const update: any = this.getUpdate();
+  if (update.$set && update.$set.status) {
+    // Mapper status vers paymentStatus lors des updates
+    const mapping: Record<string, any> = {
+      'draft': 'pending',
+      'sent': 'pending',
+      'paid': 'paid',
+      'partially_paid': 'partially_paid',
+      'overdue': 'overdue',
+      'cancelled': 'cancelled'
+    };
+    
+    update.$set.paymentStatus = mapping[update.$set.status] || 'pending';
+  }
+  next();
+});
 
 export default mongoose.models.Invoice || mongoose.model<IInvoice>('Invoice', InvoiceSchema);

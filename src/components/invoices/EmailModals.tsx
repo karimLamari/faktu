@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { IInvoice } from "@/models/Invoice";
 import { Mail, X, Send, AlertCircle, CheckCircle, Loader2, AlertTriangle, AlertOctagon } from "lucide-react";
+import { useZodForm, ValidatedInput } from "@/hooks/useZodForm";
+import { simpleEmailSchema } from "@/lib/validations/email";
 
 interface SendEmailModalProps {
   invoice: IInvoice;
@@ -16,13 +18,26 @@ interface SendEmailModalProps {
 }
 
 export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess, onUpgradeRequired }: SendEmailModalProps) {
-  const [email, setEmail] = useState(clientEmail);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  
+  const {
+    formData,
+    errors,
+    touched,
+    isValid,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+  } = useZodForm(simpleEmailSchema, {
+    recipientEmail: clientEmail,
+  }, {
+    mode: 'onChange',
+  });
 
-  const handleSend = async () => {
-    setLoading(true);
-    setError(null);
+  const onSubmit = handleSubmit(async (validatedData) => {
+    setServerError(null);
+    setIsSubmitting(true);
 
     try {
       const res = await fetch('/api/email/send-invoice', {
@@ -30,7 +45,7 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess, onUpg
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           invoiceId: invoice._id,
-          recipientEmail: email,
+          recipientEmail: validatedData.recipientEmail,
         }),
       });
 
@@ -39,7 +54,8 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess, onUpg
       if (!res.ok) {
         // Check if it's a PRO feature blocked (403 + featureBlocked)
         if (res.status === 403 && data.featureBlocked) {
-          setError(data.message || 'Fonctionnalité non disponible');
+          setServerError(data.message || 'Fonctionnalité non disponible');
+          setIsSubmitting(false);
           if (onUpgradeRequired) {
             onUpgradeRequired();
           }
@@ -51,11 +67,10 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess, onUpg
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'envoi de l\'email');
-    } finally {
-      setLoading(false);
+      setServerError(err.message || 'Erreur lors de l\'envoi de l\'email');
+      setIsSubmitting(false);
     }
-  };
+  });
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
@@ -77,7 +92,7 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess, onUpg
             </div>
             <button
               onClick={onClose}
-              disabled={loading}
+              disabled={isSubmitting}
               className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50"
             >
               <X className="w-5 h-5" />
@@ -102,23 +117,22 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess, onUpg
           </div>
 
           {/* Email input */}
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-semibold text-gray-300">
-              Email destinataire
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@client.com"
-              disabled={loading}
-              className="h-12 rounded-xl bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+          <ValidatedInput
+            label="Email destinataire"
+            name="recipientEmail"
+            type="email"
+            value={formData.recipientEmail}
+            onChange={handleChange}
+            onBlur={() => handleBlur('recipientEmail')}
+            error={errors.recipientEmail}
+            touched={touched.recipientEmail}
+            placeholder="email@client.com"
+            disabled={isSubmitting}
+            required
+          />
 
           {/* Info message */}
-          {!error && (
+          {!serverError && (
             <div className="flex items-start gap-3 p-4 bg-blue-900/30 rounded-xl border border-blue-700/50">
               <CheckCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-blue-300">
@@ -129,11 +143,11 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess, onUpg
           )}
 
           {/* Error message */}
-          {error && (
+          {serverError && (
             <div className="flex items-start gap-3 p-4 bg-red-900/30 rounded-xl border border-red-700/50 animate-slide-in-up">
               <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-red-300">
-                <p className="font-semibold">{error}</p>
+                <p className="font-semibold">{serverError}</p>
               </div>
             </div>
           )}
@@ -143,17 +157,17 @@ export function SendEmailModal({ invoice, clientEmail, onClose, onSuccess, onUpg
             <Button
               variant="outline"
               onClick={onClose}
-              disabled={loading}
+              disabled={isSubmitting}
               className="flex-1 h-12 rounded-xl border-2 bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700/50"
             >
               Annuler
             </Button>
             <Button
-              onClick={handleSend}
-              disabled={loading || !email}
-              className="flex-1 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/30"
+              onClick={onSubmit}
+              disabled={!isValid || isSubmitting}
+              className="flex-1 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   Envoi en cours...

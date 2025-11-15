@@ -3,31 +3,16 @@ import { auth } from '@/lib/auth/auth';
 import { PLANS } from '@/lib/subscription/plans';
 import dbConnect from '@/lib/db/mongodb';
 import User from '@/models/User';
+import { processOCR } from '@/lib/services/ocr';
 
 /**
- * API Route sécurisée pour l'OCR
+ * API Route sécurisée pour l'OCR générique
  * POST /api/ocr/process
  *
- * Gère l'appel à Google Cloud Vision côté serveur pour sécuriser la clé API
+ * Gère l'extraction de texte depuis une image avec:
+ * - Google Cloud Vision (plans PRO/BUSINESS)
+ * - Tesseract (plan FREE)
  */
-
-interface GoogleVisionTextAnnotation {
-  description: string;
-  locale?: string;
-}
-
-interface GoogleVisionResponse {
-  responses: Array<{
-    textAnnotations: GoogleVisionTextAnnotation[];
-    fullTextAnnotation?: {
-      text: string;
-    };
-    error?: {
-      code: number;
-      message: string;
-    };
-  }>;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,121 +56,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Vérifier le type de fichier
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json(
-        { error: 'Le fichier doit être une image' },
-        { status: 400 }
-      );
-    }
+    // 6. Traiter avec le service OCR unifié
+    const result = await processOCR(file, {
+      userId: session.user.id,
+      plan: userPlan,
+      type: 'generic',
+    });
 
-    // Vérifier la taille (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'L\'image ne doit pas dépasser 10MB' },
-        { status: 400 }
-      );
-    }
-
-    // 6. Convertir en base64
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const base64Image = buffer.toString('base64');
-
-    // 7. Appeler Google Cloud Vision (sécurisé côté serveur)
-    const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
-
-    if (!apiKey) {
-      console.error('❌ Google Cloud Vision API key not configured');
-      return NextResponse.json(
-        {
-          error: 'Service OCR non configuré',
-          provider: 'tesseract',
-          fallback: true
-        },
-        { status: 503 }
-      );
-    }
-
-    console.log('🚀 Appel Google Cloud Vision API...');
-
-    const visionResponse = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requests: [
-            {
-              image: {
-                content: base64Image,
-              },
-              features: [
-                {
-                  type: 'DOCUMENT_TEXT_DETECTION',
-                  maxResults: 1,
-                },
-              ],
-              imageContext: {
-                languageHints: ['fr', 'en'],
-              },
-            },
-          ],
-        }),
-      }
-    );
-
-    if (!visionResponse.ok) {
-      const errorData = await visionResponse.json();
-      console.error('❌ Google Vision API Error:', errorData);
-
-      return NextResponse.json(
-        {
-          error: 'Erreur Google Vision API',
-          provider: 'tesseract',
-          fallback: true,
-        },
-        { status: 500 }
-      );
-    }
-
-    const data: GoogleVisionResponse = await visionResponse.json();
-
-    // 8. Vérifier les erreurs dans la réponse
-    if (data.responses[0]?.error) {
-      console.error('❌ Google Vision Response Error:', data.responses[0].error);
-
-      return NextResponse.json(
-        {
-          error: data.responses[0].error.message,
-          provider: 'tesseract',
-          fallback: true,
-        },
-        { status: 500 }
-      );
-    }
-
-    // 9. Extraire le texte
-    const fullText =
-      data.responses[0]?.fullTextAnnotation?.text ||
-      data.responses[0]?.textAnnotations?.[0]?.description ||
-      '';
-
-    if (!fullText) {
-      return NextResponse.json(
-        { error: 'Aucun texte détecté dans l\'image' },
-        { status: 400 }
-      );
-    }
-
-    console.log('✅ Google Cloud Vision - Texte extrait:', fullText.substring(0, 100));
-
-    // 10. Retourner le texte extrait
+    // 7. Retourner le texte extrait
     return NextResponse.json({
-      provider: 'google-vision',
-      text: fullText,
+      provider: result.provider,
+      text: result.text,
+      confidence: result.confidence,
       success: true,
     });
 

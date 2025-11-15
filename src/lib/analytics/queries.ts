@@ -71,7 +71,7 @@ export async function getRevenueOverview(
         totalRevenue: {
           $sum: {
             $cond: [
-              { $in: ['$paymentStatus', ['paid', 'partially_paid']] },
+              { $in: ['\$status', ['paid', 'partially_paid']] },
               '$total',
               0,
             ],
@@ -80,7 +80,7 @@ export async function getRevenueOverview(
         totalVAT: {
           $sum: {
             $cond: [
-              { $in: ['$paymentStatus', ['paid', 'partially_paid']] },
+              { $in: ['\$status', ['paid', 'partially_paid']] },
               '$taxAmount',
               0,
             ],
@@ -91,19 +91,19 @@ export async function getRevenueOverview(
         },
         pendingAmount: {
           $sum: {
-            $cond: [{ $eq: ['$paymentStatus', 'pending'] }, '$balanceDue', 0],
+            $cond: [{ $eq: ['\$status', 'pending'] }, '$balanceDue', 0],
           },
         },
         overdueAmount: {
           $sum: {
-            $cond: [{ $eq: ['$paymentStatus', 'overdue'] }, '$balanceDue', 0],
+            $cond: [{ $eq: ['\$status', 'overdue'] }, '$balanceDue', 0],
           },
         },
         count: { $sum: 1 },
         paidCount: {
           $sum: {
             $cond: [
-              { $in: ['$paymentStatus', ['paid', 'partially_paid']] },
+              { $in: ['\$status', ['paid', 'partially_paid']] },
               1,
               0,
             ],

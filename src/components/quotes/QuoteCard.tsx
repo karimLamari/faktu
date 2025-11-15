@@ -110,13 +110,13 @@ export default function QuoteCard({ quote, onView, onEdit, onDelete, onConvert, 
             {quote.quoteNumber}
           </h3>
           <p className={`text-sm flex items-center gap-1 ${
-              quote.clientId._id === 'deleted' 
+              quote.clientId._id?.toString() === 'deleted' 
                 ? 'text-red-400 font-medium' 
                 : 'text-gray-400'
             }`}>
             <FiBriefcase className="w-4 h-4" />
             {quote.clientId.name}
-            {quote.clientId._id === 'deleted' && ' ⚠️'}
+            {quote.clientId._id?.toString() === 'deleted' && ' ⚠️'}
           </p>
         </div>
         <Badge className={`${status.color} border px-3 py-1 text-xs font-semibold flex items-center gap-1`}>

@@ -33,6 +33,10 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
   editMode,
   handleFormChange,
 }) => {
+  // Déterminer si la facture est en mode "statut seulement" (envoyée ou finalisée)
+  const isStatusOnlyMode = editMode && (form?.isFinalized || form?.sentAt);
+  const isFinalized = editMode && form?.isFinalized;
+  
   // Add service to items handler
   const handleAddService = (service: any) => {
     const items = form.items ? [...form.items] : [];
@@ -120,6 +124,23 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
         {/* Body scrollable */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           <form id="invoice-form" onSubmit={onSubmit} className="space-y-6">
+            {/* Avertissement mode statut uniquement */}
+            {isStatusOnlyMode && (
+              <div className={`${isFinalized ? 'bg-purple-900/30 border-purple-700/50' : 'bg-orange-900/30 border-orange-700/50'} border rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3`}>
+                <FiAlertCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${isFinalized ? 'text-purple-400' : 'text-orange-400'}`} />
+                <div className="flex-1 min-w-0">
+                  <h4 className={`font-semibold ${isFinalized ? 'text-purple-300' : 'text-orange-300'} mb-1 text-sm sm:text-base`}>
+                    {isFinalized ? '🔒 Facture finalisée et archivée' : '📧 Facture envoyée'}
+                  </h4>
+                  <p className={`text-xs sm:text-sm ${isFinalized ? 'text-purple-200/80' : 'text-orange-200/80'} leading-relaxed`}>
+                    {isFinalized 
+                      ? 'Cette facture est finalisée. Seul le statut peut être modifié.'
+                      : 'Cette facture a été envoyée. Vous pouvez uniquement mettre à jour le statut. Marquez-la comme "Payée" pour pouvoir la finaliser.'}
+                  </p>
+                </div>
+              </div>
+            )}
+            
             {/* Section Client et Dates */}
             <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50 space-y-4">
               <div className="flex items-center gap-2 mb-3">
@@ -397,18 +418,20 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-300 mb-2">
-                  Statut du paiement *
+                  Statut de la facture *
                 </label>
                 <select
                   className="w-full h-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  name="paymentStatus"
-                  value={form?.paymentStatus || "pending"}
+                  name="status"
+                  value={form?.status || "draft"}
                   onChange={handleFormChange}
+                  disabled={isStatusOnlyMode && !isFinalized}
                   required
                 >
-                  <option value="pending" className="bg-gray-800">En attente</option>
-                  <option value="paid" className="bg-gray-800">Payé</option>
-                  <option value="partially_paid" className="bg-gray-800">Partiellement payé</option>
+                  <option value="draft" className="bg-gray-800">Brouillon</option>
+                  <option value="sent" className="bg-gray-800">Envoyée</option>
+                  <option value="paid" className="bg-gray-800">Payée</option>
+                  <option value="partially_paid" className="bg-gray-800">Partiellement payée</option>
                   <option value="overdue" className="bg-gray-800">En retard</option>
                   <option value="cancelled" className="bg-gray-800">Annulée</option>
                 </select>
@@ -422,6 +445,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                   name="paymentMethod"
                   value={form?.paymentMethod || "bank_transfer"}
                   onChange={handleFormChange}
+                  disabled={isStatusOnlyMode}
                   required
                 >
                   <option value="bank_transfer" className="bg-gray-800">Virement bancaire</option>
@@ -435,7 +459,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
             </div>
 
             {/* Champ conditionnel pour le montant payé */}
-            {form?.paymentStatus === 'partially_paid' && (
+            {form?.status === 'partially_paid' && (
               <div className="mt-4 p-4 bg-orange-900/30 border border-orange-700/50 rounded-xl">
                 <label className="flex items-center gap-2 text-sm font-semibold text-orange-300 mb-2">
                   <FiDollarSign className="w-4 h-4" />

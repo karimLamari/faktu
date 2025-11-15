@@ -291,7 +291,7 @@ export const MinimalisteTemplate: React.FC<MinimalisteTemplateProps> = ({
         <View style={styles.totalsSection}>
           <View style={styles.totalRow}>
             <Text>Subtotal</Text>
-            <Text>{formatCurrency(invoice.totalHT)} €</Text>
+            <Text>{formatCurrency(invoice.subtotal || 0)} €</Text>
           </View>
           {Object.entries(vatByRate)
             .filter(([_, amount]) => Number(amount) > 0)
@@ -303,7 +303,7 @@ export const MinimalisteTemplate: React.FC<MinimalisteTemplateProps> = ({
             ))}
           <View style={styles.totalRowFinal}>
             <Text>Total</Text>
-            <Text>{formatCurrency(invoice.totalTTC)} €</Text>
+            <Text>{formatCurrency(invoice.total || 0)} €</Text>
           </View>
         </View>
 

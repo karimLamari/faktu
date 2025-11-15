@@ -18,7 +18,6 @@ export const invoiceSchema = z.object({
   amountPaid: z.number().min(0).optional(),
   balanceDue: z.number().min(0).optional(),
   paymentMethod: z.enum(['bank_transfer', 'check', 'cash', 'card', 'online', 'other']).optional(),
-  paymentStatus: z.enum(['pending', 'paid', 'partially_paid', 'overdue', 'cancelled']).optional(),
   notes: z.string().optional(),
   privateNotes: z.string().optional(),
   terms: z.string().optional(),

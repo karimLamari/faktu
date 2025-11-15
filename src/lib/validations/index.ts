@@ -57,3 +57,31 @@ export {
   itemSchema,
   type ItemFormData,
 } from './common';
+
+// Expense schemas
+export {
+  createExpenseSchema,
+  updateExpenseSchema,
+  paymentMethodEnum,
+  expenseCategoryEnum,
+  type CreateExpenseInput,
+  type UpdateExpenseInput,
+} from './expenses';
+
+// Service schemas
+export {
+  createServiceSchema,
+  updateServiceSchema,
+  serviceCategoryEnum,
+  type CreateServiceInput,
+  type UpdateServiceInput,
+  type ServiceCategory,
+} from './services';
+
+// Email schemas
+export {
+  sendEmailSchema,
+  emailPreviewSchema,
+  type SendEmailInput,
+  type EmailPreviewInput,
+} from './email';

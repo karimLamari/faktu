@@ -111,7 +111,7 @@ if (fs.existsSync(reactPdfPath)) {
   });
   
   // Extraire les cases du switch
-  const switchMatch = reactPdfContent.match(/switch\s*\([^)]+\)\s*\{([^}]+)\}/s);
+const switchMatch = reactPdfContent.match(/switch\s*\([^)]+\)\s*\{([\s\S]+?)\}/);
   if (switchMatch) {
     const switchContent = switchMatch[1];
     const cases = switchContent.match(/case\s+['"]([^'"]+)['"]/g) || [];

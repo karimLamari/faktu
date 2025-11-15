@@ -41,6 +41,14 @@ export {
   classicTemplate,
   minimalTemplate,
   creativeTemplate,
+  professionalTemplate,
+  elegantTemplate,
+  compactTemplate,
+  colorfulTemplate,
+  corporateTemplate,
+  prestigeTemplate,
+  studioTemplate,
+  techTemplate,
   INVOICE_TEMPLATE_PRESETS,
   DEFAULT_TEMPLATE,
   TEMPLATE_LIST,
@@ -88,6 +96,14 @@ export { ModerneTemplate } from './templates/ModerneTemplate';
 export { ClassiqueTemplate } from './templates/ClassiqueTemplate';
 export { MinimalisteTemplate } from './templates/MinimalisteTemplate';
 export { CreatifTemplate } from './templates/CreatifTemplate';
+export { ProfessionnelTemplate } from './templates/ProfessionnelTemplate';
+export { ElegantTemplate } from './templates/ElegantTemplate';
+export { CompactTemplate } from './templates/CompactTemplate';
+export { ColorfulTemplate } from './templates/ColorfulTemplate';
+export { CorporateTemplate } from './templates/CorporateTemplate';
+export { PrestigeTemplate } from './templates/PrestigeTemplate';
+export { StudioTemplate } from './templates/StudioTemplate';
+export { TechTemplate } from './templates/TechTemplate';
 
 // ============================================================================
 // COMPONENTS - UI React
