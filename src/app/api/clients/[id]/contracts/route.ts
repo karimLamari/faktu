@@ -35,10 +35,16 @@ export async function GET(
       );
     }
 
+    // Convert ObjectIds to strings for Client Components
+    const contracts = (client.contracts || []).map((contract: any) => ({
+      ...contract.toObject ? contract.toObject() : contract,
+      _id: contract._id?.toString(),
+    }));
+    
     // Retourner la liste des contrats
     return NextResponse.json({
       success: true,
-      contracts: client.contracts || [],
+      contracts,
     });
 
   } catch (error: any) {
@@ -129,7 +135,10 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: 'Contrat créé avec succès',
-      contract: newContract,
+      contract: {
+        ...newContract,
+        _id: newContract._id.toString(),
+      },
     });
 
   } catch (error: any) {

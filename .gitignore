@@ -41,6 +41,32 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 *.tar
+
 # PWA generated icons
 /public/icons/*.png
 /public/apple-touch-icon.png
+
+# Audit et documentation temporaires
+*_AUDIT*.md
+*_AUDIT*.ts
+*TEMPLATE_*.md
+*FORMS_*.md
+*MIGRATION_*.md
+*EXAMPLE_*.tsx
+*ARCHITECTURE_*.md
+ANALYTICS_*.md
+
+# Fichiers de test temporaires
+test-*.js
+test-*.ts
+
+# PDFs générés temporairement à la racine
+/*.pdf
+
+# Scripts de debug et maintenance (optionnel - décommenter si nécessaire)
+# scripts/debug-*.js
+# scripts/test-*.js
+# scripts/reset-*.js
+# scripts/check-*.js
+# scripts/delete-*.js
+# scripts/fix-*.js

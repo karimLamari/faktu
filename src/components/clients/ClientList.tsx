@@ -68,6 +68,31 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients, isProfileComple
 		initialValues: { type: 'individual', paymentTerms: 30, isActive: true },
 	});
 	
+	// Fonction wrapper pour le formulaire d'ajout (sans événement)
+	const handleAddSubmit = async (data: any) => {
+		try {
+			const cleanedForm = { ...data };
+			if (cleanedForm.type === 'individual') {
+				delete cleanedForm.companyInfo;
+			} else if (cleanedForm.type === 'business') {
+				delete cleanedForm.firstName;
+				delete cleanedForm.lastName;
+			}
+			
+			const saved = await clientService.create(cleanedForm);
+			setClients((prev) => [saved, ...prev]);
+			showSuccess('Client ajouté avec succès');
+			addModal.close();
+		} catch (error: any) {
+			if (error.response?.data?.limitReached) {
+				showError(error.response.data.error || 'Limite de clients atteinte');
+				setLimitModalType('clients');
+				setShowLimitModal(true);
+			}
+			throw error;
+		}
+	};
+	
 	// Modal d'édition de client
 	const editModal = useFormModal<Client>({
 		onSubmit: async (data) => {
@@ -77,6 +102,15 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients, isProfileComple
 			showSuccess('Client modifié avec succès');
 		},
 	});
+	
+	// Fonction wrapper pour le formulaire d'édition (sans événement)
+	const handleEditSubmit = async (data: any) => {
+		if (!data._id) return;
+		const updated = await clientService.update(data._id, data);
+		setClients((prev) => prev.map((c) => (c._id === updated._id ? { ...c, ...updated } : c)));
+		showSuccess('Client modifié avec succès');
+		editModal.close();
+	};
 	
 	// Modal de création de facture
 	const invoiceModal = useModalState<Client>();
@@ -245,20 +279,17 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients, isProfileComple
 							<h2 className="text-2xl font-bold">Nouveau client</h2>
 							<p className="text-sm text-green-100">Ajoutez un nouveau client à votre base</p>
 						</div>
-						
+
 						{/* Body modal */}
-						<div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-							<ClientForm
-								form={addModal.formData}
-								onChange={addModal.handleChange}
-								onSubmit={addModal.handleSubmit}
-								loading={addModal.loading}
-								error={addModal.error}
-								onCancel={addModal.close}
-								submitLabel="Ajouter le client"
-								cancelLabel="Annuler"
-							/>
-						</div>
+					<div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+						<ClientForm
+							initialData={addModal.formData}
+							onSubmit={handleAddSubmit}
+							onCancel={addModal.close}
+							submitLabel="Ajouter le client"
+							cancelLabel="Annuler"
+						/>
+					</div>
 					</div>
 				</div>
 			)}
@@ -272,18 +303,15 @@ const ClientList: React.FC<ClientListProps> = ({ initialClients, isProfileComple
 							<h2 className="text-2xl font-bold">Modifier le client</h2>
 							<p className="text-sm text-blue-100">Mettez à jour les informations du client</p>
 						</div>
-						
+
 						{/* Body modal */}
-						<div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-							<ClientForm
-								form={editModal.formData}
-								onChange={editModal.handleChange}
-								onSubmit={editModal.handleSubmit}
-								loading={editModal.loading}
-								error={editModal.error}
-								onCancel={editModal.close}
-								submitLabel="Enregistrer les modifications"
-								cancelLabel="Annuler"
+					<div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+						<ClientForm
+							initialData={editModal.formData}
+							onSubmit={handleEditSubmit}
+							onCancel={editModal.close}
+							submitLabel="Enregistrer les modifications"
+							cancelLabel="Annuler"
 								isEdit
 							/>
 						</div>

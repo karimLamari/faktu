@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import StatsCard from './StatsCard';
 import OnboardingChecklist from './OnboardingChecklist';
-import { ProfileCompletionModal } from './ProfileCompletionModal';
+// import { ProfileCompletionModal } from './ProfileCompletionModal'; // Désactivé - on utilise uniquement OnboardingChecklist
 import UsageBar from '../common/UsageBar';
 import { TrendingUp, Clock, Users, AlertCircle, CheckCircle, FileText } from 'lucide-react';
 import Link from 'next/link';
@@ -56,8 +56,8 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-8">
-      {/* Profile Completion Modal - shown if profile is incomplete */}
-      {user && <ProfileCompletionModal user={user} />}
+      {/* Profile Completion Modal - DÉSACTIVÉ - on utilise uniquement OnboardingChecklist */}
+      {/* {user && <ProfileCompletionModal user={user} />} */}
 
       {/* Onboarding Checklist - shown for new users */}
       {user && (

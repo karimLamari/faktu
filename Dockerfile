@@ -1,37 +1,43 @@
+# ===================================
+# Dockerfile Multi-Stage pour Next.js 15
+# Utilise @react-pdf/renderer (pas de Puppeteer/Chromium)
+# ===================================
+
 # -----------------------
-# Stage 1 : Base
+# Stage 1 : Dependencies
 # -----------------------
-FROM node:20-slim AS base
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# -----------------------
-# Stage 2 : Dependencies
-# -----------------------
-FROM base AS deps
-COPY package*.json ./
+# Copier les fichiers de dépendances
+COPY package.json package-lock.json ./
 
-# Installer toutes les dépendances pour builder
-RUN npm install --no-audit --no-fund
+# Installer les dépendances
+RUN npm ci --legacy-peer-deps
 
 # -----------------------
-# Stage 3 : Builder
+# Stage 2 : Builder
 # -----------------------
-FROM base AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
+
+# Copier les node_modules depuis deps
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Désactiver la télémétrie Next.js et optimiser le build
+# Variables d'environnement pour le build
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 
-# Builder l'application Next.js avec gestion mémoire
-RUN NEXT_DISABLE_ESLINT=true npm run build
+# Build de l'application Next.js
+RUN npm run build
 
 # -----------------------
-# Stage 4 : Runner / Production
+# Stage 3 : Runner (Production)
 # -----------------------
-FROM node:20-slim AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Variables d'environnement
@@ -40,42 +46,23 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Installer les dépendances système pour Puppeteer/Chromium
-RUN apt-get update && apt-get install -y \
-    chromium \
-    chromium-sandbox \
-    fonts-ipafont-gothic \
-    fonts-wqy-zenhei \
-    fonts-thai-tlwg \
-    fonts-kacst \
-    fonts-freefont-ttf \
-    libxss1 \
-    libxtst6 \
+# Installer uniquement les packages requis (pas de Chromium)
+RUN apk add --no-cache \
     ca-certificates \
-    --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+    && addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nextjs
 
-# Configurer Puppeteer pour utiliser Chromium installé
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
-# Créer un utilisateur non-root
-RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
-    && mkdir -p /home/pptruser/Downloads \
-    && chown -R pptruser:pptruser /home/pptruser \
-    && chown -R pptruser:pptruser /app
-
-# Créer les dossiers de persistance pour les PDFs (contracts et invoices)
-RUN mkdir -p /app/contracts /app/invoices \
-    && chown -R pptruser:pptruser /app/contracts /app/invoices
+# Créer les dossiers de persistance pour les PDFs
+RUN mkdir -p /app/contracts /app/invoices /app/public \
+    && chown -R nextjs:nodejs /app/contracts /app/invoices /app/public
 
 # Copier les fichiers nécessaires depuis le builder
-COPY --from=builder --chown=pptruser:pptruser /app/public ./public
-COPY --from=builder --chown=pptruser:pptruser /app/.next/standalone ./
-COPY --from=builder --chown=pptruser:pptruser /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Basculer vers l'utilisateur non-root
-USER pptruser
+USER nextjs
 
 # Exposer le port
 EXPOSE 3000

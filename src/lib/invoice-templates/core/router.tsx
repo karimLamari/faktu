@@ -1,17 +1,17 @@
 /**
  * Invoice PDF Router Component
- * Routes to template-specific components based on template.name
- * 
+ * Routes to template-specific components based on template.templateComponent
+ *
+ * ═══════════════════════════════════════════════════════════════
+ * 🎨 5 TEMPLATES ARCHITECTURALEMENT DISTINCTS
+ * ═══════════════════════════════════════════════════════════════
+ *
  * Architecture:
- * - Each template has its own rendering logic
  * - Moderne: Sidebar layout (30% left colored + 70% content)
  * - Classique: Vertical formal with decorative double border
  * - Minimaliste: Centered vertical, list-based (no table)
- * - Créatif: Asymmetric with diagonal header and accent bar
- * - Professionnel: 3-zone layout (full header + 65% content + 35% sidebar)
- * - Élégant: Centered luxury serif with 50px margins
- * - Compact: Dense efficient layout optimized for A4
- * - Colorful: Modern vibrant with gradients and colored cards
+ * - Studio: Asymmetric with diagonal header and accent bar
+ * - Créatif: Diagonal header with bold asymmetric layout
  */
 
 import React from 'react';
@@ -19,17 +19,10 @@ import type { TemplatePreset } from '../config/presets';
 import { ModerneTemplate } from '../templates/ModerneTemplate';
 import { ClassiqueTemplate } from '../templates/ClassiqueTemplate';
 import { MinimalisteTemplate } from '../templates/MinimalisteTemplate';
-import { CreatifTemplate } from '../templates/CreatifTemplate';
-import { ProfessionnelTemplate } from '../templates/ProfessionnelTemplate';
-import { ElegantTemplate } from '../templates/ElegantTemplate';
-import { CompactTemplate } from '../templates/CompactTemplate';
-import { ColorfulTemplate } from '../templates/ColorfulTemplate';
-import { CorporateTemplate } from '../templates/CorporateTemplate';
-import { PrestigeTemplate } from '../templates/PrestigeTemplate';
 import { StudioTemplate } from '../templates/StudioTemplate';
-import { TechTemplate } from '../templates/TechTemplate';
+import { CreatifTemplate } from '../templates/CreatifTemplate';
 
-// Note: Helvetica, Helvetica-Bold, Times, Courier sont des fonts natives dans @react-pdf
+// Note: Helvetica, Helvetica-Bold, Times-Roman, Courier sont des fonts natives dans @react-pdf
 // Aucun enregistrement n'est nécessaire
 
 export interface InvoicePDFProps {
@@ -41,47 +34,34 @@ export interface InvoicePDFProps {
 
 /**
  * Main Invoice PDF Component
- * Routes to template-specific renderers based on template.name
- * Each template manages its own styles internally
+ * Routes to template-specific renderers based on template.templateComponent
+ * Each template has its own JSX architecture and styles
  */
 export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, client, user, template }) => {
-  // Route to correct template renderer based on template name
-  switch (template.name) {
+  // Route based on templateComponent (architectural component name)
+  const componentName = template.templateComponent || template.name;
+
+  switch (componentName) {
+    case 'ClassiqueTemplate':
     case 'Classique':
       return <ClassiqueTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
+
+    case 'MinimalisteTemplate':
     case 'Minimaliste':
       return <MinimalisteTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
-    case 'Créatif':
-      return <CreatifTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
-    case 'Professionnel':
-      return <ProfessionnelTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
-    case 'Élégant':
-      return <ElegantTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
-    case 'Compact':
-      return <CompactTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
-    case 'Colorful':
-      return <ColorfulTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
-    case 'Corporate':
-      return <CorporateTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
-    case 'Prestige':
-      return <PrestigeTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
+
+    case 'StudioTemplate':
     case 'Studio':
       return <StudioTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
-    case 'Tech':
-      return <TechTemplate invoice={invoice} client={client} user={user} template={template} />;
-    
+
+    case 'CreatifTemplate':
+    case 'Créatif':
+      return <CreatifTemplate invoice={invoice} client={client} user={user} template={template} />;
+
+    case 'ModerneTemplate':
     case 'Moderne':
     default:
+      // Fallback to Moderne for unknown/legacy templates
       return <ModerneTemplate invoice={invoice} client={client} user={user} template={template} />;
   }
 };

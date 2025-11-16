@@ -1,9 +1,9 @@
-import type { 
-  ITemplateColors, 
-  ITemplateFonts, 
-  ITemplateLayout, 
-  ITemplateSections, 
-  ITemplateCustomText 
+import type {
+  ITemplateColors,
+  ITemplateFonts,
+  ITemplateLayout,
+  ITemplateSections,
+  ITemplateCustomText
 } from '@/models/InvoiceTemplate';
 import { LEGAL_MENTIONS_PRESETS } from './legal-mentions';
 
@@ -13,6 +13,7 @@ import { LEGAL_MENTIONS_PRESETS } from './legal-mentions';
 export interface TemplatePreset {
   name: string;
   description?: string;
+  templateComponent: string;  // Nom du composant de rendu (ex: 'ModerneTemplate', 'ClassiqueTemplate')
   colors: ITemplateColors;
   fonts: ITemplateFonts;
   layout: ITemplateLayout;
@@ -21,32 +22,63 @@ export interface TemplatePreset {
 }
 
 /**
- * Template Moderne - Design épuré avec barre bleue moderne
+ * ═══════════════════════════════════════════════════════════════
+ * 🎨 4 TEMPLATES ARCHITECTURALEMENT DISTINCTS
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Chaque template a une architecture VRAIMENT différente :
+ * - Position du logo (left/center/right)
+ * - Style de header (modern/classic/minimal)
+ * - Layout (colonnes/centré/asymétrique)
+ * - Affichage des détails d'items (oui/non)
+ * - Typographie (Helvetica/Times-Roman)
+ * - Espacement (compact/normal)
+ */
+
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * 1️⃣ MODERNE - Architecture startup/tech moderne
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * ARCHITECTURE:
+ * - Header: Barre colorée horizontale en haut
+ * - Logo: LEFT, taille medium
+ * - Layout: 2 colonnes classique
+ * - Typography: Helvetica (sans-serif moderne)
+ * - Items: Sommaire uniquement (pas de détails)
+ * - Espacement: Compact, efficace
+ *
+ * CAS D'USAGE:
+ * - Startups tech
+ * - Agences digitales
+ * - Freelances modernes
+ * - Services SaaS
  */
 export const modernTemplate: TemplatePreset = {
   name: 'Moderne',
-  description: 'Barre de couleur moderne, logo à gauche, espacé',
+  description: 'Design tech moderne avec header coloré et layout efficace',
+  templateComponent: 'ModerneTemplate',
   colors: {
-    primary: '#2563eb', // Bleu vif moderne
-    secondary: '#64748b',
-    accent: '#10b981',
-    text: '#1e293b',
+    primary: '#2563eb',    // Bleu tech moderne
+    secondary: '#64748b',  // Gris ardoise
+    accent: '#10b981',     // Vert accent
+    text: '#1e293b',       // Noir profond
     background: '#ffffff',
   },
   fonts: {
-    heading: 'Helvetica',
+    heading: 'Helvetica-Bold',
     body: 'Helvetica',
     size: {
       base: 10,
-      heading: 18,
+      heading: 20,
       small: 8,
     },
   },
   layout: {
     logoPosition: 'left',
     logoSize: 'medium',
-    headerStyle: 'modern', // Barre de couleur
-    borderRadius: 6,
+    headerStyle: 'modern',
+    borderRadius: 4,
     spacing: 'compact',
   },
   sections: {
@@ -54,7 +86,7 @@ export const modernTemplate: TemplatePreset = {
     showBankDetails: true,
     showPaymentTerms: true,
     showLegalMentions: true,
-    showItemDetails: false,
+    showItemDetails: false,  // ❌ PAS de détails (moderne, épuré)
     showCompanyDetails: true,
     showClientDetails: true,
   },
@@ -69,42 +101,59 @@ export const modernTemplate: TemplatePreset = {
 };
 
 /**
- * Template Classique - Style classique européen avec bordures épaisses, serif
- * Architecture distincte: Logo LEFT large + bordures décoratives + typography serif
- * Cas d'usage: Cabinets juridiques, notaires, collectivités, entreprises formelles
+ * ═══════════════════════════════════════════════════════════════
+ * 2️⃣ CLASSIQUE - Architecture traditionnelle européenne
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * ARCHITECTURE:
+ * - Header: 2 colonnes avec bordures épaisses décoratives
+ * - Logo: LEFT LARGE (80px)
+ * - Layout: 2 colonnes traditionnel
+ * - Typography: Times-Roman (serif élégant)
+ * - Items: DÉTAILS COMPLETS (description + qté + prix unitaire + TVA)
+ * - Espacement: Normal, respirant
+ * - Bordures: Géométriques, sans arrondis
+ *
+ * CAS D'USAGE:
+ * - Cabinets juridiques
+ * - Notaires
+ * - Entreprises formelles
+ * - Collectivités
+ * - Prestations B2B traditionnelles
  */
 export const classicTemplate: TemplatePreset = {
   name: 'Classique',
-  description: 'Style classique européen, bordures, serif, tout détaillé, formel',
+  description: 'Style européen formel avec bordures, serif et détails complets',
+  templateComponent: 'ClassiqueTemplate',
   colors: {
-    primary: '#3d2818', // Marron foncé élégant
-    secondary: '#8b6914', // Or foncé
-    accent: '#d4af37', // Or brillant (accent)
-    text: '#1a1a1a', // Noir pur
-    background: '#fefdf7', // Crème très légère
+    primary: '#1e3a8a',    // Bleu marine profond
+    secondary: '#6b7280',  // Gris neutre
+    accent: '#b45309',     // Or/bronze élégant
+    text: '#1f2937',       // Noir quasi-pur
+    background: '#ffffff',
   },
   fonts: {
-    heading: 'Helvetica-Bold', // Serif non supporté dans @react-pdf
-    body: 'Helvetica',
+    heading: 'Times-Roman',  // ✨ SERIF (distinction majeure)
+    body: 'Times-Roman',
     size: {
       base: 10,
-      heading: 20,
+      heading: 22,
       small: 8,
     },
   },
   layout: {
-    logoPosition: 'left', // Logo à gauche, GRAND
-    logoSize: 'large', // ✨ GRAND (80px)
-    headerStyle: 'classic', // 2-colonnes + bordures épaisses
-    borderRadius: 0, // Sans arrondis (géométrie classique)
-    spacing: 'normal', // Équilibré, respirant
+    logoPosition: 'left',
+    logoSize: 'large',      // ✨ GRAND logo (distinction)
+    headerStyle: 'classic', // ✨ Bordures épaisses
+    borderRadius: 0,        // ✨ Géométrique pur
+    spacing: 'normal',
   },
   sections: {
     showLogo: true,
     showBankDetails: true,
     showPaymentTerms: true,
     showLegalMentions: true,
-    showItemDetails: true, // ✨ TABLE COMPLÈTE (distinction majeure)
+    showItemDetails: true,   // ✅ DÉTAILS COMPLETS (distinction majeure)
     showCompanyDetails: true,
     showClientDetails: true,
   },
@@ -112,156 +161,6 @@ export const classicTemplate: TemplatePreset = {
     invoiceTitle: 'FACTURE',
     paymentTermsLabel: 'Conditions de règlement',
     bankDetailsLabel: 'Coordonnées bancaires',
-    legalMentions: LEGAL_MENTIONS_PRESETS['societe-complete'].template, // ✨ Complètes (formel)
-    legalMentionsType: 'societe-complete',
-    footerText: undefined,
-  },
-};
-
-/**
- * Template Minimaliste - Ultra épuré, startup/tech, centré, sans décoration
- * Architecture distincte: Logo CENTER petit + zéro bordures + espaces généreux + sans détails items
- * Cas d'usage: Startups, agences tech, freelancers modernes, consultants innovants
- */
-export const minimalTemplate: TemplatePreset = {
-  name: 'Minimaliste',
-  description: 'Ultra épuré, tech/startup, centré, sans bordures, compact',
-  colors: {
-    primary: '#000000', // Noir pur (minimalisme)
-    secondary: '#888888', // Gris neutre
-    accent: '#3b82f6', // Bleu tech (accent léger)
-    text: '#1f2937', // Noir quasi-pur
-    background: '#ffffff', // Blanc pur
-  },
-  fonts: {
-    heading: 'Helvetica',
-    body: 'Helvetica',
-    size: {
-      base: 10, // Petit texte
-      heading: 18, // Petit titre (compact)
-      small: 8,
-    },
-  },
-  layout: {
-    logoPosition: 'center', // ✨ CENTRÉ (distinction majeure)
-    logoSize: 'small', // ✨ PETIT (30px, minimaliste)
-    headerStyle: 'minimal', // Sans bordures, sans décoration
-    borderRadius: 0, // Géométrique pur
-    spacing: 'compact', // Compact mais aéré
-  },
-  sections: {
-    showLogo: true,
-    showBankDetails: true,
-    showPaymentTerms: false, // ✨ NON (économiser espace)
-    showLegalMentions: true,
-    showItemDetails: false, // ✨ NON (voir totalité, pas détails)
-    showCompanyDetails: true,
-    showClientDetails: true,
-  },
-  customText: {
-    invoiceTitle: 'FACTURE',
-    paymentTermsLabel: 'Modalités de paiement',
-    bankDetailsLabel: 'Coordonnées Bancaires',
-    legalMentions: LEGAL_MENTIONS_PRESETS['societe-standard'].template,
-    legalMentionsType: 'societe-standard',
-    footerText: undefined,
-  },
-};
-
-/**
- * Template Créatif - Moderne créatif, asymétrique, couleurs vibrantes, rounded
- * Architecture distincte: Logo RIGHT + barre latérale colorée + typography moderne géométrique + arrondis
- * Cas d'usage: Agences créatives, studios design, freelancers créatifs, marques modernes
- */
-export const creativeTemplate: TemplatePreset = {
-  name: 'Créatif',
-  description: 'Moderne créatif, asymétrique, logo droite, couleurs vibrantes, rounded',
-  colors: {
-    primary: '#9333ea', // Violet vibrant (moderne)
-    secondary: '#6b7280', // Gris neutre
-    accent: '#f97316', // Orange vif (contraste)
-    text: '#111827', // Noir foncé
-    background: '#ffffff', // Blanc pur
-  },
-  fonts: {
-    heading: 'Helvetica-Bold', // Fonts système non supportées
-    body: 'Helvetica',
-    size: {
-      base: 11,
-      heading: 26, // ✨ Grand titre (moderne, impactant)
-      small: 9,
-    },
-  },
-  layout: {
-    logoPosition: 'right', // ✨ DROITE (asymétrique, distinction majeure)
-    logoSize: 'medium',
-    headerStyle: 'modern', // Barre latérale (colorée)
-    borderRadius: 12, // ✨ ARRONDIS MARQUÉS (12px)
-    spacing: 'normal', // Équilibré, créatif
-  },
-  sections: {
-    showLogo: true,
-    showBankDetails: true,
-    showPaymentTerms: true,
-    showLegalMentions: true,
-    showItemDetails: false, // ✨ Sommaire (moderne, pas détails)
-    showCompanyDetails: true,
-    showClientDetails: true,
-  },
-  customText: {
-    invoiceTitle: 'FACTURE',
-    paymentTermsLabel: 'Modalités de paiement',
-    bankDetailsLabel: 'Coordonnées Bancaires',
-    legalMentions: LEGAL_MENTIONS_PRESETS['societe-standard'].template,
-    legalMentionsType: 'societe-standard',
-    footerText: undefined,
-  },
-};
-
-/**
- * Template Professionnel - Corporate premium avec 3 zones (header + 65% content + 35% sidebar)
- * Architecture distincte: Full-width header coloré + layout 2-colonnes asymétrique + tableaux encadrés
- * Cas d'usage: Grandes entreprises, cabinets conseil, B2B premium, prestations formelles
- */
-export const professionalTemplate: TemplatePreset = {
-  name: 'Professionnel',
-  description: 'Corporate premium, 3-zone layout, formal, tableaux encadrés',
-  colors: {
-    primary: '#2563eb', // Bleu corporate
-    secondary: '#475569', // Gris foncé
-    accent: '#0ea5e9', // Bleu clair accent
-    text: '#0f172a', // Noir profond
-    background: '#ffffff',
-  },
-  fonts: {
-    heading: 'Helvetica-Bold',
-    body: 'Helvetica',
-    size: {
-      base: 10,
-      heading: 20,
-      small: 8,
-    },
-  },
-  layout: {
-    logoPosition: 'right',
-    logoSize: 'large',
-    headerStyle: 'modern',
-    borderRadius: 4,
-    spacing: 'normal',
-  },
-  sections: {
-    showLogo: true,
-    showBankDetails: true,
-    showPaymentTerms: true,
-    showLegalMentions: true,
-    showItemDetails: true,
-    showCompanyDetails: true,
-    showClientDetails: true,
-  },
-  customText: {
-    invoiceTitle: 'FACTURE',
-    paymentTermsLabel: 'Modalités de paiement',
-    bankDetailsLabel: 'Coordonnées Bancaires',
     legalMentions: LEGAL_MENTIONS_PRESETS['societe-complete'].template,
     legalMentionsType: 'societe-complete',
     footerText: undefined,
@@ -269,92 +168,58 @@ export const professionalTemplate: TemplatePreset = {
 };
 
 /**
- * Template Élégant - Luxe raffiné, centré, serif, marges larges
- * Architecture distincte: Tout centré + marges 50px + serif Times-Roman + espaces généreux + minimal borders
- * Cas d'usage: Luxury brands, artisans haut de gamme, services premium, prestations exclusives
+ * ═══════════════════════════════════════════════════════════════
+ * 3️⃣ MINIMALISTE - Architecture ultra-épurée centrée
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * ARCHITECTURE:
+ * - Header: Minimaliste sans décoration
+ * - Logo: CENTER petit (30px)
+ * - Layout: CENTRÉ (tout aligné au centre)
+ * - Typography: Helvetica (sans-serif épuré)
+ * - Items: Sommaire uniquement
+ * - Espacement: Compact mais généreux
+ * - Bordures: AUCUNE
+ *
+ * CAS D'USAGE:
+ * - Designers indépendants
+ * - Consultants modernes
+ * - Services premium épurés
+ * - Freelances créatifs minimalistes
  */
-export const elegantTemplate: TemplatePreset = {
-  name: 'Élégant',
-  description: 'Luxe raffiné, centré, serif, marges larges, minimal borders',
+export const minimalTemplate: TemplatePreset = {
+  name: 'Minimaliste',
+  description: 'Ultra épuré, centré, sans bordures, maximalisme du vide',
+  templateComponent: 'MinimalisteTemplate',
   colors: {
-    primary: '#1f2937', // Gris anthracite élégant
-    secondary: '#9ca3af', // Gris clair
-    accent: '#d4af37', // Or subtil
-    text: '#374151', // Gris foncé texte
-    background: '#ffffff',
-  },
-  fonts: {
-    heading: 'Times-Roman', // Serif élégant
-    body: 'Times-Roman',
-    size: {
-      base: 11,
-      heading: 22,
-      small: 9,
-    },
-  },
-  layout: {
-    logoPosition: 'center',
-    logoSize: 'medium',
-    headerStyle: 'minimal',
-    borderRadius: 0,
-    spacing: 'normal',
-  },
-  sections: {
-    showLogo: true,
-    showBankDetails: true,
-    showPaymentTerms: true,
-    showLegalMentions: true,
-    showItemDetails: false,
-    showCompanyDetails: true,
-    showClientDetails: true,
-  },
-  customText: {
-    invoiceTitle: 'FACTURE',
-    paymentTermsLabel: 'Modalités de paiement',
-    bankDetailsLabel: 'Coordonnées Bancaires',
-    legalMentions: LEGAL_MENTIONS_PRESETS['societe-standard'].template,
-    legalMentionsType: 'societe-standard',
-    footerText: undefined,
-  },
-};
-
-/**
- * Template Compact - Dense et efficace, optimisé pour tenir sur une page
- * Architecture distincte: Marges 20px + police 8pt + tableaux serrés + info grid 3-colonnes
- * Cas d'usage: Factures multi-items, beaucoup d'informations, optimisation espace, économie papier
- */
-export const compactTemplate: TemplatePreset = {
-  name: 'Compact',
-  description: 'Dense et efficace, optimisé pour A4, tableaux serrés',
-  colors: {
-    primary: '#059669', // Vert efficace
-    secondary: '#6b7280', // Gris neutre
-    accent: '#10b981', // Vert clair
-    text: '#111827', // Noir
-    background: '#ffffff',
+    primary: '#000000',    // Noir pur (minimalisme)
+    secondary: '#6b7280',  // Gris neutre
+    accent: '#3b82f6',     // Bleu tech (accent léger)
+    text: '#111827',       // Noir quasi-pur
+    background: '#ffffff', // Blanc pur
   },
   fonts: {
     heading: 'Helvetica',
     body: 'Helvetica',
     size: {
-      base: 8, // Petit pour densité
-      heading: 16,
-      small: 6,
+      base: 10,
+      heading: 18,  // ✨ Petit (compact)
+      small: 8,
     },
   },
   layout: {
-    logoPosition: 'right',
-    logoSize: 'small',
-    headerStyle: 'modern',
+    logoPosition: 'center', // ✨ CENTRÉ (distinction majeure)
+    logoSize: 'small',      // ✨ PETIT (minimaliste)
+    headerStyle: 'minimal', // ✨ Sans décoration
     borderRadius: 0,
     spacing: 'compact',
   },
   sections: {
     showLogo: true,
     showBankDetails: true,
-    showPaymentTerms: true,
+    showPaymentTerms: false,  // ✨ Minimal (économiser espace)
     showLegalMentions: true,
-    showItemDetails: true,
+    showItemDetails: false,   // ❌ Sommaire uniquement
     showCompanyDetails: true,
     showClientDetails: true,
   },
@@ -369,178 +234,50 @@ export const compactTemplate: TemplatePreset = {
 };
 
 /**
- * Template Colorful - Moderne vibrant avec dégradés et couleurs vives
- * Architecture distincte: Header dégradé + cartes colorées + accents multiples + design dynamique
- * Cas d'usage: Startups tech, agences digitales, freelancers créatifs, services innovants
- */
-export const colorfulTemplate: TemplatePreset = {
-  name: 'Colorful',
-  description: 'Moderne vibrant, dégradés, cartes colorées, design dynamique',
-  colors: {
-    primary: '#3b82f6', // Bleu vif
-    secondary: '#10b981', // Vert vibrant
-    accent: '#f59e0b', // Orange
-    text: '#1f2937', // Noir foncé
-    background: '#f9fafb', // Gris très clair
-  },
-  fonts: {
-    heading: 'Helvetica-Bold',
-    body: 'Helvetica',
-    size: {
-      base: 10,
-      heading: 24,
-      small: 8,
-    },
-  },
-  layout: {
-    logoPosition: 'right',
-    logoSize: 'large',
-    headerStyle: 'modern',
-    borderRadius: 12,
-    spacing: 'normal',
-  },
-  sections: {
-    showLogo: true,
-    showBankDetails: true,
-    showPaymentTerms: true,
-    showLegalMentions: true,
-    showItemDetails: true,
-    showCompanyDetails: true,
-    showClientDetails: true,
-  },
-  customText: {
-    invoiceTitle: 'FACTURE',
-    paymentTermsLabel: 'Modalités de paiement',
-    bankDetailsLabel: 'Coordonnées Bancaires',
-    legalMentions: LEGAL_MENTIONS_PRESETS['societe-standard'].template,
-    legalMentionsType: 'societe-standard',
-    footerText: undefined,
-  },
-};
-
-/**
- * CORPORATE Template - Design d'entreprise moderne et professionnel
- */
-export const corporateTemplate: TemplatePreset = {
-  name: 'Corporate',
-  description: 'Design d\'entreprise moderne avec header coloré et layout équilibré',
-  colors: {
-    primary: '#2563eb',
-    secondary: '#64748b',
-    accent: '#0ea5e9',
-    text: '#1e293b',
-    background: '#ffffff',
-  },
-  fonts: {
-    heading: 'Helvetica-Bold',
-    body: 'Helvetica',
-    size: {
-      base: 10,
-      heading: 20,
-      small: 8,
-    },
-  },
-  layout: {
-    logoPosition: 'right',
-    logoSize: 'large',
-    headerStyle: 'modern',
-    borderRadius: 6,
-    spacing: 'normal',
-  },
-  sections: {
-    showLogo: true,
-    showBankDetails: true,
-    showPaymentTerms: true,
-    showLegalMentions: true,
-    showItemDetails: true,
-    showCompanyDetails: true,
-    showClientDetails: true,
-  },
-  customText: {
-    invoiceTitle: 'FACTURE',
-    paymentTermsLabel: 'Modalités de paiement',
-    bankDetailsLabel: 'Coordonnées Bancaires',
-    legalMentions: LEGAL_MENTIONS_PRESETS['societe-standard'].template,
-    legalMentionsType: 'societe-standard',
-    footerText: undefined,
-  },
-};
-
-/**
- * PRESTIGE Template - Design luxe et raffiné
- */
-export const prestigeTemplate: TemplatePreset = {
-  name: 'Prestige',
-  description: 'Design luxe centré avec typographie élégante et or',
-  colors: {
-    primary: '#1f2937',
-    secondary: '#9ca3af',
-    accent: '#d4af37',
-    text: '#374151',
-    background: '#ffffff',
-  },
-  fonts: {
-    heading: 'Times-Roman',
-    body: 'Times-Roman',
-    size: {
-      base: 10,
-      heading: 22,
-      small: 8,
-    },
-  },
-  layout: {
-    logoPosition: 'center',
-    logoSize: 'large',
-    headerStyle: 'minimal',
-    borderRadius: 0,
-    spacing: 'normal',
-  },
-  sections: {
-    showLogo: true,
-    showBankDetails: true,
-    showPaymentTerms: true,
-    showLegalMentions: true,
-    showItemDetails: true,
-    showCompanyDetails: true,
-    showClientDetails: true,
-  },
-  customText: {
-    invoiceTitle: 'FACTURE',
-    paymentTermsLabel: 'Modalités de paiement',
-    bankDetailsLabel: 'Coordonnées Bancaires',
-    legalMentions: LEGAL_MENTIONS_PRESETS['societe-standard'].template,
-    legalMentionsType: 'societe-standard',
-    footerText: undefined,
-  },
-};
-
-/**
- * STUDIO Template - Design créatif et moderne pour agences
+ * ═══════════════════════════════════════════════════════════════
+ * 4️⃣ STUDIO - Architecture créative asymétrique
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * ARCHITECTURE:
+ * - Header: Barre latérale colorée à droite
+ * - Logo: RIGHT (asymétrique)
+ * - Layout: Asymétrique créatif
+ * - Typography: Helvetica-Bold (moderne géométrique)
+ * - Items: Détails complets avec style
+ * - Espacement: Normal, créatif
+ * - Bordures: ARRONDIS MARQUÉS (12px)
+ *
+ * CAS D'USAGE:
+ * - Agences créatives
+ * - Studios de design
+ * - Freelances créatifs
+ * - Marques modernes audacieuses
  */
 export const studioTemplate: TemplatePreset = {
   name: 'Studio',
-  description: 'Design créatif asymétrique avec barre d\'accent colorée',
+  description: 'Design créatif asymétrique avec barre latérale et arrondis',
+  templateComponent: 'StudioTemplate',
   colors: {
-    primary: '#8b5cf6',
-    secondary: '#6b7280',
-    accent: '#f59e0b',
-    text: '#111827',
+    primary: '#8b5cf6',    // Violet vibrant
+    secondary: '#6b7280',  // Gris neutre
+    accent: '#f59e0b',     // Orange vif (contraste)
+    text: '#111827',       // Noir foncé
     background: '#ffffff',
   },
   fonts: {
     heading: 'Helvetica-Bold',
     body: 'Helvetica',
     size: {
-      base: 10,
-      heading: 24,
-      small: 8,
+      base: 11,
+      heading: 26,  // ✨ Grand titre impactant
+      small: 9,
     },
   },
   layout: {
-    logoPosition: 'right',
+    logoPosition: 'right',  // ✨ DROITE (asymétrique, distinction majeure)
     logoSize: 'medium',
-    headerStyle: 'modern',
-    borderRadius: 6,
+    headerStyle: 'modern',  // Barre latérale colorée
+    borderRadius: 12,       // ✨ ARRONDIS MARQUÉS
     spacing: 'normal',
   },
   sections: {
@@ -548,7 +285,7 @@ export const studioTemplate: TemplatePreset = {
     showBankDetails: true,
     showPaymentTerms: true,
     showLegalMentions: true,
-    showItemDetails: true,
+    showItemDetails: true,   // ✅ Détails avec style
     showCompanyDetails: true,
     showClientDetails: true,
   },
@@ -563,40 +300,58 @@ export const studioTemplate: TemplatePreset = {
 };
 
 /**
- * TECH Template - Design moderne et épuré pour startups/tech
+ * ═══════════════════════════════════════════════════════════════
+ * ✨ TEMPLATE 5: CRÉATIF
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * ARCHITECTURE:
+ * - Header: Diagonal coloré avec effet dynamique
+ * - Logo: CENTER (équilibré sur header diagonal)
+ * - Layout: Asymétrique bold avec éléments décalés
+ * - Typography: Helvetica-Bold (impact visuel)
+ * - Items: Design moderne avec formes géométriques
+ * - Espacement: Relaxed (aéré créatif)
+ * - Bordures: ARRONDIS DOUX (8px)
+ *
+ * CAS D'USAGE:
+ * - Créateurs de contenu
+ * - Artistes
+ * - Freelances ultra-créatifs
+ * - Marques lifestyle et mode
  */
-export const techTemplate: TemplatePreset = {
-  name: 'Tech',
-  description: 'Design moderne épuré avec cartes et espacements larges',
+export const creatifTemplate: TemplatePreset = {
+  name: 'Créatif',
+  description: 'Design audacieux avec header diagonal et layout asymétrique',
+  templateComponent: 'CreatifTemplate',
   colors: {
-    primary: '#3b82f6',
-    secondary: '#6b7280',
-    accent: '#10b981',
-    text: '#212529',
-    background: '#f8f9fa',
+    primary: '#ec4899',    // Rose vibrant (créatif)
+    secondary: '#6b7280',  // Gris neutre
+    accent: '#14b8a6',     // Turquoise (contraste dynamique)
+    text: '#111827',       // Noir foncé
+    background: '#ffffff',
   },
   fonts: {
     heading: 'Helvetica-Bold',
     body: 'Helvetica',
     size: {
-      base: 10,
-      heading: 20,
-      small: 8,
+      base: 11,
+      heading: 28,  // ✨ XXL pour impact maximal
+      small: 9,
     },
   },
   layout: {
-    logoPosition: 'right',
-    logoSize: 'large',
-    headerStyle: 'modern',
-    borderRadius: 8,
-    spacing: 'normal',
+    logoPosition: 'center',  // ✨ CENTRÉ sur header diagonal
+    logoSize: 'large',       // ✨ GRAND pour visibilité
+    headerStyle: 'modern',   // Header diagonal coloré
+    borderRadius: 8,         // Arrondis doux
+    spacing: 'relaxed',      // ✨ Espacé pour respiration créative
   },
   sections: {
     showLogo: true,
     showBankDetails: true,
     showPaymentTerms: true,
     showLegalMentions: true,
-    showItemDetails: true,
+    showItemDetails: true,   // ✅ Détails avec style géométrique
     showCompanyDetails: true,
     showClientDetails: true,
   },
@@ -609,6 +364,12 @@ export const techTemplate: TemplatePreset = {
     footerText: undefined,
   },
 };
+
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * 📦 EXPORTS
+ * ═══════════════════════════════════════════════════════════════
+ */
 
 /**
  * Map de tous les templates disponibles
@@ -618,15 +379,8 @@ export const INVOICE_TEMPLATE_PRESETS: Record<string, TemplatePreset> = {
   moderne: modernTemplate,
   classique: classicTemplate,
   minimaliste: minimalTemplate,
-  creatif: creativeTemplate,
-  professionnel: professionalTemplate,
-  elegant: elegantTemplate,
-  compact: compactTemplate,
-  colorful: colorfulTemplate,
-  corporate: corporateTemplate,
-  prestige: prestigeTemplate,
   studio: studioTemplate,
-  tech: techTemplate,
+  creatif: creatifTemplate,
 };
 
 /**

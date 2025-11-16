@@ -22,7 +22,7 @@ export const invoiceSchema = z.object({
   privateNotes: z.string().optional(),
   terms: z.string().optional(),
   pdfUrl: z.string().optional(),
-  pdfGeneratedAt: z.union([z.string(), z.date()]).optional(),
+  pdfGeneratedAt: z.union([z.string(), z.date()]).nullable().optional(),
 });
 
 // Type exports

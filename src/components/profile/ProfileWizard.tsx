@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { userProfileUpdateSchema } from '@/lib/validations';
+import { z } from 'zod';
 
 interface ProfileWizardProps {
   initialData: any;
@@ -38,20 +40,21 @@ export default function ProfileWizard({
     address: {
       street: initialData?.address?.street || '',
       city: initialData?.address?.city || '',
-      postalCode: initialData?.address?.postalCode || '',
+      zipCode: initialData?.address?.zipCode || initialData?.address?.postalCode || '',
       country: initialData?.address?.country || 'France',
     },
     // Step 2: Bancaire
     iban: initialData?.iban || '',
     // Step 3: Légal (optionnel)
     rcsCity: initialData?.rcsCity || '',
-    capital: initialData?.capital || '',
+    capital: initialData?.capital || undefined,
     tvaNumber: initialData?.tvaNumber || '',
     insuranceCompany: initialData?.insuranceCompany || '',
     insurancePolicy: initialData?.insurancePolicy || '',
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const steps = [
     { number: 1, title: 'Informations essentielles', icon: '👤' },
@@ -59,26 +62,102 @@ export default function ProfileWizard({
     { number: 3, title: 'Informations légales', icon: '📋' },
   ];
 
+  // Validation Zod en temps réel pour un champ spécifique
+  const validateField = (fieldPath: string, value: any): string | null => {
+    try {
+      // Si le champ est vide et optionnel, pas d'erreur
+      if (!value || value === '') {
+        // Les champs obligatoires
+        const requiredFields = ['companyName', 'legalForm', 'address.street', 'address.city', 'address.zipCode'];
+        if (requiredFields.includes(fieldPath)) {
+          return 'Ce champ est requis';
+        }
+        return null;
+      }
+
+      // Valider avec le schéma Zod partiel
+      if (fieldPath === 'companyName') {
+        userProfileUpdateSchema.shape.companyName.parse(value);
+      } else if (fieldPath === 'legalForm') {
+        userProfileUpdateSchema.shape.legalForm.parse(value);
+      } else if (fieldPath === 'address.street') {
+        userProfileUpdateSchema.shape.address.shape.street.parse(value);
+      } else if (fieldPath === 'address.city') {
+        userProfileUpdateSchema.shape.address.shape.city.parse(value);
+      } else if (fieldPath === 'address.zipCode') {
+        userProfileUpdateSchema.shape.address.shape.zipCode.parse(value);
+      } else if (fieldPath === 'siret') {
+        userProfileUpdateSchema.shape.siret?.parse(value);
+      } else if (fieldPath === 'phone') {
+        userProfileUpdateSchema.shape.phone?.parse(value);
+      } else if (fieldPath === 'iban') {
+        userProfileUpdateSchema.shape.iban?.parse(value);
+      } else if (fieldPath === 'tvaNumber') {
+        userProfileUpdateSchema.shape.tvaNumber?.parse(value);
+      } else if (fieldPath === 'bic') {
+        userProfileUpdateSchema.shape.bic?.parse(value);
+      }
+      
+      return null;
+    } catch (error) {
+      if (error instanceof z.ZodError && error.issues && error.issues.length > 0) {
+        return error.issues[0].message || 'Valeur invalide';
+      }
+      // Fallback pour les autres types d'erreurs
+      return 'Format invalide';
+    }
+  };
+
   const validateStep = (step: Step): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (step === 1) {
-      if (!formData.firstName) newErrors.firstName = 'Prénom requis';
-      if (!formData.lastName) newErrors.lastName = 'Nom requis';
-      if (!formData.companyName) newErrors.companyName = 'Nom d\'entreprise requis';
-      if (!formData.address.street) newErrors['address.street'] = 'Adresse requise';
-      if (!formData.address.city) newErrors['address.city'] = 'Ville requise';
-      if (!formData.address.postalCode) newErrors['address.postalCode'] = 'Code postal requis';
-    }
+      // Champs obligatoires de l'étape 1
+      const requiredFields = {
+        companyName: formData.companyName,
+        legalForm: formData.legalForm,
+        'address.street': formData.address.street,
+        'address.city': formData.address.city,
+        'address.zipCode': formData.address.zipCode,
+      };
 
-    if (step === 2) {
-      if (!formData.iban) newErrors.iban = 'IBAN requis';
-      else if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/.test(formData.iban.replace(/\s/g, ''))) {
-        newErrors.iban = 'Format IBAN invalide';
+      Object.entries(requiredFields).forEach(([field, value]) => {
+        const error = validateField(field, value);
+        if (error) {
+          newErrors[field] = error;
+        }
+      });
+
+      // Validation optionnelle SIRET si rempli
+      if (formData.siret) {
+        const siretError = validateField('siret', formData.siret);
+        if (siretError) newErrors.siret = siretError;
+      }
+
+      // Validation optionnelle téléphone si rempli
+      if (formData.phone) {
+        const phoneError = validateField('phone', formData.phone);
+        if (phoneError) newErrors.phone = phoneError;
       }
     }
 
-    // Step 3 est optionnel, pas de validation requise
+    if (step === 2) {
+      // IBAN est optionnel selon le schéma, mais on le valide si rempli
+      if (formData.iban) {
+        const ibanError = validateField('iban', formData.iban);
+        if (ibanError) {
+          newErrors.iban = ibanError;
+        }
+      }
+    }
+
+    // Step 3 est entièrement optionnel, validation uniquement si rempli
+    if (step === 3) {
+      if (formData.tvaNumber) {
+        const tvaError = validateField('tvaNumber', formData.tvaNumber);
+        if (tvaError) newErrors.tvaNumber = tvaError;
+      }
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -103,7 +182,20 @@ export default function ProfileWizard({
 
     setSaving(true);
     try {
-      await onSubmit(formData);
+      // Nettoyer les champs vides (convertir "" en undefined pour les champs optionnels)
+      const cleanedData = {
+        ...formData,
+        siret: formData.siret || undefined,
+        phone: formData.phone || undefined,
+        iban: formData.iban || undefined,
+        rcsCity: formData.rcsCity || undefined,
+        capital: formData.capital || undefined,
+        tvaNumber: formData.tvaNumber || undefined,
+        insuranceCompany: formData.insuranceCompany || undefined,
+        insurancePolicy: formData.insurancePolicy || undefined,
+      };
+
+      await onSubmit(cleanedData);
     } catch (error) {
       console.error('Erreur sauvegarde profil:', error);
     } finally {
@@ -112,6 +204,10 @@ export default function ProfileWizard({
   };
 
   const updateField = (field: string, value: any) => {
+    // Marquer le champ comme "touché"
+    setTouched(prev => ({ ...prev, [field]: true }));
+
+    // Mettre à jour la valeur
     if (field.startsWith('address.')) {
       const addressField = field.split('.')[1];
       setFormData(prev => ({
@@ -121,9 +217,18 @@ export default function ProfileWizard({
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
-    // Clear error when user types
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+
+    // Validation en temps réel
+    const error = validateField(field, value);
+    if (error) {
+      setErrors(prev => ({ ...prev, [field]: error }));
+    } else {
+      // Effacer l'erreur si la validation passe
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -183,125 +288,142 @@ export default function ProfileWizard({
               </h2>
               <p className="text-gray-400 text-sm">
                 Ces informations sont nécessaires pour générer des factures conformes.
+                <span className="text-red-400 ml-1">* = champ obligatoire</span>
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label>Prénom *</Label>
-                <Input
-                  value={formData.firstName}
-                  onChange={(e) => updateField('firstName', e.target.value)}
-                  placeholder="Jean"
-                />
-                {errors.firstName && (
-                  <p className="text-red-400 text-xs mt-1">{errors.firstName}</p>
-                )}
-              </div>
-
-              <div>
-                <Label>Nom *</Label>
-                <Input
-                  value={formData.lastName}
-                  onChange={(e) => updateField('lastName', e.target.value)}
-                  placeholder="Dupont"
-                />
-                {errors.lastName && (
-                  <p className="text-red-400 text-xs mt-1">{errors.lastName}</p>
-                )}
-              </div>
-            </div>
-
             <div>
-              <Label>Nom de l'entreprise *</Label>
+              <Label>Nom de l'entreprise <span className="text-red-400">*</span></Label>
               <Input
                 value={formData.companyName}
                 onChange={(e) => updateField('companyName', e.target.value)}
+                onBlur={() => setTouched(prev => ({ ...prev, companyName: true }))}
                 placeholder="Ma Super Entreprise SARL"
+                className={errors.companyName && touched.companyName ? 'border-red-500 focus:border-red-500' : ''}
               />
-              {errors.companyName && (
-                <p className="text-red-400 text-xs mt-1">{errors.companyName}</p>
+              {errors.companyName && touched.companyName && (
+                <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.companyName}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label>Forme juridique <span className="text-red-400">*</span></Label>
+              <Select
+                value={formData.legalForm}
+                onValueChange={(value) => updateField('legalForm', value)}
+              >
+                <SelectTrigger className={errors.legalForm && touched.legalForm ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Sélectionner une forme juridique..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SARL">SARL</SelectItem>
+                  <SelectItem value="EURL">EURL</SelectItem>
+                  <SelectItem value="SASU">SASU</SelectItem>
+                  <SelectItem value="Auto-entrepreneur">Auto-entrepreneur</SelectItem>
+                  <SelectItem value="Profession libérale">Profession libérale</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.legalForm && touched.legalForm && (
+                <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.legalForm}
+                </p>
               )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label>Forme juridique</Label>
-                <Select
-                  value={formData.legalForm}
-                  onValueChange={(value) => updateField('legalForm', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SARL">SARL</SelectItem>
-                    <SelectItem value="EURL">EURL</SelectItem>
-                    <SelectItem value="SASU">SASU</SelectItem>
-                    <SelectItem value="Auto-entrepreneur">Auto-entrepreneur</SelectItem>
-                    <SelectItem value="Profession libérale">Profession libérale</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>SIRET</Label>
+                <Label>SIRET <span className="text-gray-400 text-xs">(optionnel)</span></Label>
                 <Input
                   value={formData.siret}
                   onChange={(e) => updateField('siret', e.target.value)}
+                  onBlur={() => setTouched(prev => ({ ...prev, siret: true }))}
                   placeholder="123 456 789 00010"
                   maxLength={17}
+                  className={errors.siret && touched.siret ? 'border-red-500 focus:border-red-500' : ''}
                 />
+                {errors.siret && touched.siret && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.siret}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label>Téléphone <span className="text-gray-400 text-xs">(optionnel)</span></Label>
+                <Input
+                  value={formData.phone}
+                  onChange={(e) => updateField('phone', e.target.value)}
+                  onBlur={() => setTouched(prev => ({ ...prev, phone: true }))}
+                  placeholder="+33 6 12 34 56 78"
+                  className={errors.phone && touched.phone ? 'border-red-500 focus:border-red-500' : ''}
+                />
+                {errors.phone && touched.phone && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.phone}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div>
-              <Label>Téléphone</Label>
-              <Input
-                value={formData.phone}
-                onChange={(e) => updateField('phone', e.target.value)}
-                placeholder="+33 6 12 34 56 78"
-              />
-            </div>
-
             <div className="space-y-4 pt-4 border-t border-gray-700">
-              <h3 className="font-semibold text-white">Adresse de l'entreprise</h3>
+              <h3 className="font-semibold text-white">Adresse de l'entreprise <span className="text-red-400">*</span></h3>
               
               <div>
-                <Label>Rue *</Label>
+                <Label>Rue <span className="text-red-400">*</span></Label>
                 <Input
                   value={formData.address.street}
                   onChange={(e) => updateField('address.street', e.target.value)}
+                  onBlur={() => setTouched(prev => ({ ...prev, 'address.street': true }))}
                   placeholder="12 rue de la Paix"
+                  className={errors['address.street'] && touched['address.street'] ? 'border-red-500 focus:border-red-500' : ''}
                 />
-                {errors['address.street'] && (
-                  <p className="text-red-400 text-xs mt-1">{errors['address.street']}</p>
+                {errors['address.street'] && touched['address.street'] && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors['address.street']}
+                  </p>
                 )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label>Code postal *</Label>
+                  <Label>Code postal <span className="text-red-400">*</span></Label>
                   <Input
-                    value={formData.address.postalCode}
-                    onChange={(e) => updateField('address.postalCode', e.target.value)}
+                    value={formData.address.zipCode}
+                    onChange={(e) => updateField('address.zipCode', e.target.value)}
+                    onBlur={() => setTouched(prev => ({ ...prev, 'address.zipCode': true }))}
                     placeholder="75001"
                     maxLength={5}
+                    className={errors['address.zipCode'] && touched['address.zipCode'] ? 'border-red-500 focus:border-red-500' : ''}
                   />
-                  {errors['address.postalCode'] && (
-                    <p className="text-red-400 text-xs mt-1">{errors['address.postalCode']}</p>
+                  {errors['address.zipCode'] && touched['address.zipCode'] && (
+                    <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors['address.zipCode']}
+                    </p>
                   )}
                 </div>
 
                 <div className="md:col-span-2">
-                  <Label>Ville *</Label>
+                  <Label>Ville <span className="text-red-400">*</span></Label>
                   <Input
                     value={formData.address.city}
                     onChange={(e) => updateField('address.city', e.target.value)}
+                    onBlur={() => setTouched(prev => ({ ...prev, 'address.city': true }))}
                     placeholder="Paris"
+                    className={errors['address.city'] && touched['address.city'] ? 'border-red-500 focus:border-red-500' : ''}
                   />
-                  {errors['address.city'] && (
-                    <p className="text-red-400 text-xs mt-1">{errors['address.city']}</p>
+                  {errors['address.city'] && touched['address.city'] && (
+                    <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors['address.city']}
+                    </p>
                   )}
                 </div>
               </div>
@@ -327,6 +449,7 @@ export default function ProfileWizard({
               </h2>
               <p className="text-gray-400 text-sm">
                 Votre IBAN sera affiché sur les factures pour faciliter les paiements.
+                <span className="text-gray-400 ml-1">(optionnel mais recommandé)</span>
               </p>
             </div>
 
@@ -337,15 +460,25 @@ export default function ProfileWizard({
             </div>
 
             <div>
-              <Label>IBAN *</Label>
+              <Label>IBAN <span className="text-gray-400 text-xs">(optionnel)</span></Label>
               <Input
                 value={formData.iban}
                 onChange={(e) => updateField('iban', e.target.value.toUpperCase())}
+                onBlur={() => setTouched(prev => ({ ...prev, iban: true }))}
                 placeholder="FR76 1234 5678 9012 3456 7890 123"
-                className="font-mono"
+                className={`font-mono ${errors.iban && touched.iban ? 'border-red-500 focus:border-red-500' : ''}`}
               />
-              {errors.iban && (
-                <p className="text-red-400 text-xs mt-1">{errors.iban}</p>
+              {errors.iban && touched.iban && (
+                <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.iban}
+                </p>
+              )}
+              {!errors.iban && formData.iban && formData.iban.length >= 10 && (
+                <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                  <Check className="w-3 h-3" />
+                  Format IBAN valide
+                </p>
               )}
               <p className="text-xs text-gray-500 mt-1">
                 L'IBAN sera automatiquement formaté
@@ -362,19 +495,20 @@ export default function ProfileWizard({
                 📋 Informations légales
               </h2>
               <p className="text-gray-400 text-sm">
-                Ces informations sont optionnelles mais recommandées pour une facturation complète.
+                Ces informations sont <strong className="text-gray-300">entièrement optionnelles</strong> mais recommandées pour une facturation complète.
               </p>
             </div>
 
-            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-              <p className="text-gray-300 text-sm">
-                <strong>ℹ️ Optionnel :</strong> Vous pouvez passer cette étape et compléter plus tard.
+            <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
+              <p className="text-blue-300 text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                <strong>Info :</strong> Vous pouvez passer cette étape et compléter plus tard dans les paramètres.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label>Ville d'immatriculation RCS</Label>
+                <Label>Ville d'immatriculation RCS <span className="text-gray-400 text-xs">(optionnel)</span></Label>
                 <Input
                   value={formData.rcsCity}
                   onChange={(e) => updateField('rcsCity', e.target.value)}
@@ -386,31 +520,44 @@ export default function ProfileWizard({
               </div>
 
               <div>
-                <Label>Capital social (€)</Label>
+                <Label>Capital social (€) <span className="text-gray-400 text-xs">(optionnel)</span></Label>
                 <Input
                   type="number"
-                  value={formData.capital}
-                  onChange={(e) => updateField('capital', e.target.value)}
+                  value={formData.capital || ''}
+                  onChange={(e) => updateField('capital', e.target.value ? Number(e.target.value) : undefined)}
                   placeholder="10000"
                 />
               </div>
             </div>
 
             <div>
-              <Label>Numéro de TVA intracommunautaire</Label>
+              <Label>Numéro de TVA intracommunautaire <span className="text-gray-400 text-xs">(optionnel)</span></Label>
               <Input
                 value={formData.tvaNumber}
                 onChange={(e) => updateField('tvaNumber', e.target.value.toUpperCase())}
+                onBlur={() => setTouched(prev => ({ ...prev, tvaNumber: true }))}
                 placeholder="FR12345678901"
-                className="font-mono"
+                className={`font-mono ${errors.tvaNumber && touched.tvaNumber ? 'border-red-500 focus:border-red-500' : ''}`}
               />
+              {errors.tvaNumber && touched.tvaNumber && (
+                <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.tvaNumber}
+                </p>
+              )}
+              {!errors.tvaNumber && formData.tvaNumber && formData.tvaNumber.length >= 13 && (
+                <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                  <Check className="w-3 h-3" />
+                  Format TVA valide
+                </p>
+              )}
               <p className="text-xs text-gray-500 mt-1">
                 Format: FR + 11 chiffres
               </p>
             </div>
 
             <div className="space-y-4 pt-4 border-t border-gray-700">
-              <h3 className="font-semibold text-white">Assurance RC Pro</h3>
+              <h3 className="font-semibold text-white">Assurance RC Pro <span className="text-gray-400 text-xs">(optionnel)</span></h3>
               
               <div>
                 <Label>Nom de la compagnie</Label>

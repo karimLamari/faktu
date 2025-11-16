@@ -15,14 +15,25 @@ export interface InvoiceTemplateProps {
 /**
  * Calculate VAT breakdown by rate
  */
-export const calculateVATByRate = (invoice: any): { [rate: number]: number } => {
-  const vatByRate: { [rate: number]: number } = {};
+export const calculateVATByRate = (invoice: any): { [rate: number]: { amount: number; base: number } } => {
+  const vatByRate: { [rate: number]: { amount: number; base: number } } = {};
+  
+  if (!invoice?.items || !Array.isArray(invoice.items)) {
+    return vatByRate;
+  }
+  
   for (const item of invoice.items) {
     const rate = typeof item.taxRate === 'number' ? item.taxRate : 0;
-    const base = item.quantity * item.unitPrice;
+    const quantity = Number(item.quantity) || 0;
+    const unitPrice = Number(item.unitPrice) || 0;
+    const base = quantity * unitPrice;
     const vat = base * (rate / 100);
-    if (!vatByRate[rate]) vatByRate[rate] = 0;
-    vatByRate[rate] += vat;
+    
+    if (!vatByRate[rate]) {
+      vatByRate[rate] = { amount: 0, base: 0 };
+    }
+    vatByRate[rate].amount += vat;
+    vatByRate[rate].base += base;
   }
   return vatByRate;
 };

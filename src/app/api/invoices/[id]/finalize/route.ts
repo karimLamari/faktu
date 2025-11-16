@@ -11,7 +11,7 @@ import {
   calculatePdfHash 
 } from '@/lib/invoices/storage';
 import { logInvoiceAction } from '@/lib/services/audit-logger';
-import { DEFAULT_TEMPLATE } from '@/lib/invoice-templates';
+import { DEFAULT_TEMPLATE, type TemplatePreset } from '@/lib/invoice-templates';
 import { isProfileComplete, getMissingProfileFields } from '@/lib/utils/profile';
 import mongoose from 'mongoose';
 
@@ -135,12 +135,42 @@ export async function POST(
       );
     }
 
-    // 7. Récupérer le template actif de l'utilisateur
-    const userTemplate = await InvoiceTemplate.findOne({
-      userId: user._id,
-      isDefault: true,
-    }).lean();
-    const template = userTemplate || DEFAULT_TEMPLATE;
+    // 7. Récupérer le template de la facture (snapshot) ou template actif de l'utilisateur
+    // Si la facture a déjà un templateSnapshot (nouvelles factures), on l'utilise
+    // Sinon (factures anciennes), on capture le template actuel et on le sauvegarde
+    let template;
+    let templateSnapshot = invoice.templateSnapshot;
+    let templateId = invoice.templateId;
+
+    if (templateSnapshot) {
+      // La facture a déjà un template capturé, on l'utilise (cohérence garantie)
+      template = templateSnapshot;
+      console.log(`📋 Utilisation du template snapshot de la facture: ${template.name}`);
+    } else {
+      // Facture ancienne sans template capturé : on capture le template actuel
+      const userTemplate = await InvoiceTemplate.findOne({
+        userId: user._id,
+        isDefault: true,
+      }).lean<TemplatePreset & { _id: mongoose.Types.ObjectId }>();
+
+      const selectedTemplate = userTemplate || DEFAULT_TEMPLATE;
+
+      // Créer un snapshot pour cette facture ancienne
+      templateSnapshot = {
+        name: selectedTemplate.name,
+        description: selectedTemplate.description,
+        colors: selectedTemplate.colors,
+        fonts: selectedTemplate.fonts,
+        layout: selectedTemplate.layout,
+        sections: selectedTemplate.sections,
+        customText: selectedTemplate.customText,
+      };
+
+      template = templateSnapshot;
+      templateId = userTemplate?._id.toString() || null;
+
+      console.log(`📋 Capture du template actuel pour facture ancienne: ${template.name}`);
+    }
 
     // 8. Générer le PDF final
     console.log(`📄 Génération PDF final pour facture ${invoice.invoiceNumber}...`);
@@ -176,6 +206,9 @@ export async function POST(
           finalizedBy: new mongoose.Types.ObjectId(session.user.id),
           pdfPath,
           pdfHash,
+          // Sauvegarder le template snapshot pour les factures anciennes
+          templateSnapshot,
+          templateId,
           // Mettre à jour status si encore en draft
           status: invoice.status === 'draft' ? 'sent' : invoice.status,
         },

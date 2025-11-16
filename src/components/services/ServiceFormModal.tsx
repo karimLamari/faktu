@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FiEdit2, FiFileText, FiDollarSign, FiPercent, FiFolder, FiCheckSquare, FiSave, FiLoader, FiCheckCircle } from 'react-icons/fi';
+import { useZodForm, ValidatedInput } from '@/hooks/useZodForm';
+import { createServiceSchema, serviceCategoryEnum } from '@/lib/validations/services';
+import { z } from 'zod';
 
 interface ServiceFormModalProps {
   isOpen: boolean;
@@ -17,58 +19,108 @@ interface ServiceFormModalProps {
 export default function ServiceFormModal({
   isOpen,
   onClose,
-  onSubmit,
+  onSubmit: onSubmitProp,
   initialData,
   mode = 'create',
 }: ServiceFormModalProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    unitPrice: 0,
-    taxRate: 20,
-    category: '',
-    isActive: true,
+  // ========================================
+  // ÉTAT AVEC HOOK DE VALIDATION
+  // ========================================
+
+  const initialFormData = {
+    name: initialData?.name || '',
+    description: initialData?.description || '',
+    unitPrice: initialData?.unitPrice || 0,
+    taxRate: initialData?.taxRate || 20,
+    category: initialData?.category || '',
+    isActive: initialData?.isActive ?? true,
+  };
+
+  const {
+    formData,
+    errors,
+    touched,
+    isValid,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    setFieldValue,
+    reset,
+  } = useZodForm(createServiceSchema, initialFormData, {
+    mode: 'onChange',
+    validateOnMount: false,
   });
+
+  // ========================================
+  // ÉTAT DE CHARGEMENT
+  // ========================================
+
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mettre à jour le formulaire quand initialData change
-  useEffect(() => {
-    if (initialData && mode === 'edit') {
-      setFormData({
-        name: initialData.name || '',
-        description: initialData.description || '',
-        unitPrice: initialData.unitPrice || 0,
-        taxRate: initialData.taxRate || 20,
-        category: initialData.category || '',
-        isActive: initialData.isActive ?? true,
-      });
-    } else if (mode === 'create') {
-      // Reset pour création
-      setFormData({
-        name: '',
-        description: '',
-        unitPrice: 0,
-        taxRate: 20,
-        category: '',
-        isActive: true,
-      });
-    }
-  }, [initialData, mode, isOpen]);
+  // ========================================
+  // RESET QUAND MODAL OUVRE/FERME
+  // ========================================
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (isOpen) {
+      if (mode === 'create') {
+        reset({
+          name: '',
+          description: '',
+          unitPrice: 0,
+          taxRate: 20,
+          category: '',
+          isActive: true,
+        });
+      } else if (initialData) {
+        reset({
+          name: initialData.name || '',
+          description: initialData.description || '',
+          unitPrice: initialData.unitPrice || 0,
+          taxRate: initialData.taxRate || 20,
+          category: initialData.category || '',
+          isActive: initialData.isActive ?? true,
+        });
+      }
+    }
+  }, [isOpen, mode, initialData, reset]);
+
+  // ========================================
+  // HANDLERS
+  // ========================================
+
+  // Handler pour les nombres
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFieldValue(name as any, parseFloat(value) || 0);
+  };
+
+  // Handler pour le checkbox
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFieldValue('isActive', e.target.checked);
+  };
+
+  // Submit avec gestion d'erreurs
+  const onSubmit = handleSubmit(async (validatedData) => {
     setIsLoading(true);
     try {
-      await onSubmit(formData);
+      await onSubmitProp(validatedData);
       onClose();
     } catch (error) {
       console.error('Error submitting service:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  });
+
+  // ========================================
+  // RENDER
+  // ========================================
 
   if (!isOpen) return null;
+
+  // Extraire les catégories de l'enum Zod
+  const categories = serviceCategoryEnum.options;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
@@ -85,78 +137,95 @@ export default function ServiceFormModal({
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <form onSubmit={onSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           {/* Name */}
-          <div>
-            <Label htmlFor="name" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
-              <FiFileText className="w-4 h-4 text-indigo-400" />
-              Nom de la prestation *
+          <ValidatedInput
+            label="Nom de la prestation"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            onBlur={() => handleBlur('name')}
+            placeholder="Ex: Développement site web"
+            error={errors.name}
+            touched={touched.name}
+            required
+          />
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-sm font-medium text-gray-300">
+              Description (optionnelle)
             </Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Ex: Développement site web"
-              required
-              className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500"
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description || ''}
+              onChange={handleChange}
+              onBlur={() => handleBlur('description')}
+              rows={3}
+              className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white resize-none placeholder:text-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+              placeholder="Description détaillée de la prestation..."
             />
+            {touched.description && errors.description && (
+              <p className="text-sm text-red-400">{errors.description}</p>
+            )}
           </div>
 
           {/* Unit Price and Tax Rate */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="unitPrice" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
-                <FiDollarSign className="w-4 h-4 text-green-400" />
-                Prix unitaire (€) *
-              </Label>
-              <Input
-                id="unitPrice"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.unitPrice}
-                onChange={(e) =>
-                  setFormData({ ...formData, unitPrice: parseFloat(e.target.value) || 0 })
-                }
-                required
-                className="bg-gray-800/50 border-gray-700 text-white"
-              />
-            </div>
+            <ValidatedInput
+              label="Prix unitaire (€)"
+              name="unitPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.unitPrice}
+              onChange={handleNumberChange}
+              onBlur={() => handleBlur('unitPrice')}
+              error={errors.unitPrice}
+              touched={touched.unitPrice}
+              required
+            />
 
-            <div>
-              <Label htmlFor="taxRate" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
-                <FiPercent className="w-4 h-4 text-blue-400" />
-                Taux de TVA (%) *
-              </Label>
-              <Input
-                id="taxRate"
-                type="number"
-                step="0.1"
-                min="0"
-                max="100"
-                value={formData.taxRate}
-                onChange={(e) =>
-                  setFormData({ ...formData, taxRate: parseFloat(e.target.value) || 0 })
-                }
-                required
-                className="bg-gray-800/50 border-gray-700 text-white"
-              />
-            </div>
+            <ValidatedInput
+              label="Taux de TVA (%)"
+              name="taxRate"
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              value={formData.taxRate}
+              onChange={handleNumberChange}
+              onBlur={() => handleBlur('taxRate')}
+              error={errors.taxRate}
+              touched={touched.taxRate}
+              required
+            />
           </div>
 
           {/* Category */}
-          <div>
-            <Label htmlFor="category" className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+          <div className="space-y-2">
+            <Label htmlFor="category" className="flex items-center gap-2 text-sm font-semibold text-gray-300">
               <FiFolder className="w-4 h-4 text-purple-400" />
               Catégorie
             </Label>
-            <Input
+            <select
               id="category"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              placeholder="Ex: Développement, Design, Consulting..."
-              className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500"
-            />
+              name="category"
+              value={formData.category || ''}
+              onChange={handleChange}
+              className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder:text-gray-500 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+            >
+              <option value="" className="bg-gray-800">-- Sélectionner une catégorie --</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat} className="bg-gray-800">
+                  {cat}
+                </option>
+              ))}
+            </select>
+            {touched.category && errors.category && (
+              <p className="text-sm text-red-400">{errors.category}</p>
+            )}
           </div>
 
           {/* Active Status */}
@@ -165,7 +234,7 @@ export default function ServiceFormModal({
               type="checkbox"
               id="isActive"
               checked={formData.isActive}
-              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              onChange={handleCheckboxChange}
               className="w-4 h-4 text-blue-600 rounded border-gray-700 focus:ring-blue-500 bg-gray-800"
             />
             <Label htmlFor="isActive" className="flex items-center gap-2 cursor-pointer font-medium text-gray-300">
@@ -174,39 +243,57 @@ export default function ServiceFormModal({
             </Label>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-6 border-t border-gray-700/50">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onClose} 
-              disabled={isLoading}
-              className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700/50"
-            >
-              Annuler
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 shadow-lg shadow-indigo-500/20"
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <FiLoader className="w-4 h-4 animate-spin" />
-                  Enregistrement...
-                </span>
-              ) : mode === 'create' ? (
-                <span className="flex items-center gap-2">
-                  <FiCheckCircle className="w-4 h-4" />
-                  Créer
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <FiSave className="w-4 h-4" />
-                  Modifier
-                </span>
-              )}
-            </Button>
+          {/* Footer avec indicateur de validation */}
+          <div className="p-6 bg-gray-800/30 border-t border-gray-700/50 -mx-6 -mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm text-gray-400">
+                {!isValid && Object.keys(errors).length > 0 && (
+                  <span className="text-red-400">
+                    ⚠️ {Object.keys(errors).length} erreur(s) à corriger
+                  </span>
+                )}
+                {isValid && touched.name && (
+                  <span className="text-green-400">
+                    ✓ Formulaire valide
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isLoading}
+                className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700/50"
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                disabled={!isValid || isLoading}
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 shadow-lg shadow-indigo-500/20"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <FiLoader className="w-4 h-4 animate-spin" />
+                    Enregistrement...
+                  </span>
+                ) : mode === 'create' ? (
+                  <span className="flex items-center gap-2">
+                    <FiCheckCircle className="w-4 h-4" />
+                    Créer
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <FiSave className="w-4 h-4" />
+                    Modifier
+                  </span>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </div>

@@ -1,8 +1,7 @@
 /**
- * MODERNE Template - Clean & Professional
- * Structure: Barre latérale gauche colorée + Layout à 2 colonnes
- * Style: Moderne, épuré, couleurs vives, sans-serif
- * DISTINCTION: Sidebar gauche avec toutes les infos entreprise, contenu principal à droite
+ * MODERNE Template - Design épuré et moderne
+ * Layout: Barre de couleur à gauche + Contenu principal épuré
+ * Optimisé: Padding 28px, fontSize 8-9px pour tenir sur 1 page A4
  */
 
 import React from 'react';
@@ -26,286 +25,285 @@ export const ModerneTemplate: React.FC<ModerneTemplateProps> = ({
   const { colors, sections, customText } = template;
   const vatByRate = calculateVATByRate(invoice);
 
-  // Styles spécifiques au template Moderne - SIDEBAR LAYOUT
+  // Utiliser les mentions légales du template personnalisé
+  const legalMentions = customText?.legalMentions || '';
+
+  const formatDate = (date: string | Date) => {
+    const d = new Date(date);
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+  };
+
   const styles = StyleSheet.create({
     page: {
       flexDirection: 'row',
-      backgroundColor: '#ffffff',
+      padding: 28,
       fontFamily: 'Helvetica',
+      fontSize: 8,
+      backgroundColor: colors.background || '#ffffff',
     },
-    // ═══ BARRE LATÉRALE GAUCHE COLORÉE (30%) ═══
     sidebar: {
       width: '30%',
-      backgroundColor: colors.primary,
-      padding: 25,
-      color: '#ffffff',
+      backgroundColor: colors.primary || '#2563eb',
+      marginRight: 20,
+      padding: 18,
+      borderRadius: 6,
     },
-    sidebarLogo: {
-      width: 70,
-      height: 70,
-      marginBottom: 15,
-      alignSelf: 'center',
-    },
-    sidebarCompanyName: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      marginBottom: 12,
-      color: '#ffffff',
-      textAlign: 'center',
-    },
-    sidebarDetails: {
-      fontSize: 8,
-      lineHeight: 1.6,
-      color: 'rgba(255,255,255,0.9)',
-      marginBottom: 20,
-    },
-    sidebarDivider: {
-      borderTop: '1px solid rgba(255,255,255,0.3)',
-      marginVertical: 15,
-    },
-    sidebarSection: {
-      marginBottom: 15,
-    },
-    sidebarLabel: {
-      fontSize: 8,
-      fontWeight: 'bold',
-      marginBottom: 5,
-      color: 'rgba(255,255,255,0.7)',
-      textTransform: 'uppercase',
-    },
-    sidebarValue: {
-      fontSize: 8,
-      lineHeight: 1.5,
-      color: '#ffffff',
-    },
-    // ═══ CONTENU PRINCIPAL (70%) ═══
     mainContent: {
-      width: '70%',
-      padding: 30,
+      flex: 1,
+    },
+    logo: {
+      width: 50,
+      height: 50,
+      marginBottom: 15,
+      objectFit: 'contain',
+    },
+    companyName: {
+      fontSize: 11,
+      fontWeight: 'bold',
+      color: '#ffffff',
+      marginBottom: 6,
+    },
+    companyDetails: {
+      fontSize: 7,
+      color: '#ffffff',
+      lineHeight: 1.4,
+      opacity: 0.9,
     },
     invoiceTitle: {
-      fontSize: 28,
+      fontSize: 18,
       fontWeight: 'bold',
-      color: colors.primary,
+      color: colors.primary || '#2563eb',
       marginBottom: 8,
     },
     invoiceNumber: {
-      fontSize: 12,
-      color: colors.text,
+      fontSize: 9,
+      color: colors.text || '#1e293b',
       marginBottom: 4,
     },
-    invoiceDates: {
-      fontSize: 9,
-      color: colors.secondary,
-      lineHeight: 1.6,
-      marginBottom: 25,
+    dates: {
+      fontSize: 7,
+      color: colors.secondary || '#64748b',
+      marginBottom: 15,
     },
-    clientCard: {
+    clientSection: {
+      marginBottom: 15,
+      padding: 12,
       backgroundColor: '#f8fafc',
-      padding: 15,
-      borderRadius: 8,
-      marginBottom: 25,
-      borderLeft: `3px solid ${colors.accent}`,
+      borderLeft: `3px solid ${colors.primary || '#2563eb'}`,
     },
-    clientLabel: {
-      fontSize: 9,
+    clientTitle: {
+      fontSize: 8,
       fontWeight: 'bold',
-      color: colors.primary,
+      color: colors.text || '#1e293b',
       marginBottom: 6,
-      textTransform: 'uppercase',
-    },
-    clientName: {
-      fontSize: 12,
-      fontWeight: 'bold',
-      color: colors.text,
-      marginBottom: 5,
     },
     clientDetails: {
-      fontSize: 9,
-      color: colors.secondary,
-      lineHeight: 1.5,
+      fontSize: 7,
+      color: colors.secondary || '#64748b',
+      lineHeight: 1.4,
     },
     table: {
-      marginBottom: 20,
+      marginBottom: 15,
     },
     tableHeader: {
       flexDirection: 'row',
-      backgroundColor: colors.primary,
-      color: '#ffffff',
-      padding: 10,
-      borderTopLeftRadius: 6,
-      borderTopRightRadius: 6,
-      fontSize: 9,
+      backgroundColor: colors.primary || '#2563eb',
+      padding: 8,
+      borderTopLeftRadius: 4,
+      borderTopRightRadius: 4,
+    },
+    tableHeaderText: {
+      fontSize: 7,
       fontWeight: 'bold',
+      color: '#ffffff',
     },
     tableRow: {
       flexDirection: 'row',
-      padding: 8,
       borderBottom: '1px solid #e2e8f0',
-      fontSize: 9,
+      padding: 6,
     },
-    tableRowAlt: {
-      flexDirection: 'row',
-      padding: 8,
-      borderBottom: '1px solid #e2e8f0',
-      backgroundColor: '#f8fafc',
-      fontSize: 9,
+    tableCell: {
+      fontSize: 7,
+      color: colors.text || '#1e293b',
     },
-    colQty: { width: '10%', textAlign: 'center' },
-    colDesc: { width: '48%' },
-    colUnit: { width: '16%', textAlign: 'right' },
-    colTax: { width: '10%', textAlign: 'right' },
-    colTotal: { width: '16%', textAlign: 'right', fontWeight: 'bold' },
-    itemDesc: { fontWeight: 'bold', color: colors.text },
-    itemDetail: { fontSize: 7, color: colors.secondary, marginTop: 2 },
+    col1: { width: '40%' },
+    col2: { width: '20%', textAlign: 'right' },
+    col3: { width: '15%', textAlign: 'right' },
+    col4: { width: '25%', textAlign: 'right' },
     totalsSection: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      marginBottom: 20,
+      marginTop: 10,
+      alignItems: 'flex-end',
     },
-    totalsBox: { width: '48%' },
     totalRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      padding: 6,
-      fontSize: 10,
+      width: '50%',
+      padding: 4,
+      fontSize: 7,
     },
-    totalRowFinal: {
+    totalLabel: {
+      color: colors.secondary || '#64748b',
+    },
+    totalValue: {
+      color: colors.text || '#1e293b',
+      fontWeight: 'bold',
+    },
+    finalTotal: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      padding: 10,
-      backgroundColor: colors.primary,
-      color: '#ffffff',
-      fontSize: 12,
+      width: '50%',
+      padding: 8,
+      backgroundColor: colors.primary || '#2563eb',
+      marginTop: 4,
+      borderRadius: 4,
+    },
+    finalTotalLabel: {
+      fontSize: 9,
       fontWeight: 'bold',
-      borderRadius: 6,
-      marginTop: 6,
+      color: '#ffffff',
+    },
+    finalTotalValue: {
+      fontSize: 10,
+      fontWeight: 'bold',
+      color: '#ffffff',
+    },
+    bankDetails: {
+      marginTop: 15,
+      padding: 12,
+      backgroundColor: '#f8fafc',
+      borderRadius: 4,
+    },
+    bankTitle: {
+      fontSize: 8,
+      fontWeight: 'bold',
+      color: colors.text || '#1e293b',
+      marginBottom: 6,
+    },
+    bankInfo: {
+      fontSize: 7,
+      color: colors.secondary || '#64748b',
+      lineHeight: 1.4,
+    },
+    legalMentions: {
+      marginTop: 15,
+      fontSize: 6,
+      color: colors.secondary || '#64748b',
+      lineHeight: 1.3,
+      textAlign: 'justify',
     },
     footer: {
-      marginTop: 'auto',
-      paddingTop: 15,
-      borderTop: '1px solid #e2e8f0',
-      fontSize: 7,
-      color: colors.secondary,
-      lineHeight: 1.4,
+      marginTop: 15,
+      paddingTop: 10,
+      borderTop: `1px solid ${colors.secondary || '#64748b'}`,
+      fontSize: 6,
+      color: colors.secondary || '#64748b',
+      textAlign: 'center',
     },
   });
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* ═══ SIDEBAR GAUCHE ═══ */}
+        {/* Sidebar gauche colorée */}
         <View style={styles.sidebar}>
           {sections.showLogo && user?.logo && (
-            <Image src={user.logo} style={styles.sidebarLogo} />
+            <Image src={user.logo} style={styles.logo} />
           )}
-          
           {sections.showCompanyDetails && (
-            <>
-              <Text style={styles.sidebarCompanyName}>
-                {user?.companyName || 'Entreprise'}
-              </Text>
-              <Text style={styles.sidebarDetails}>
+            <View>
+              <Text style={styles.companyName}>{user?.companyName || 'Entreprise'}</Text>
+              <Text style={styles.companyDetails}>
                 {user?.address?.street && `${user.address.street}\n`}
-                {user?.address?.zipCode && user?.address?.city &&
-                  `${user.address.zipCode} ${user.address.city}\n`}
-                {user?.siret && `SIRET: ${user.siret}\n`}
-                {user?.vatNumber && `TVA: ${user.vatNumber}`}
-              </Text>
-            </>
-          )}
-
-          <View style={styles.sidebarDivider} />
-
-          {sections.showBankDetails && (user?.iban || user?.bankDetails?.iban) && (
-            <View style={styles.sidebarSection}>
-              <Text style={styles.sidebarLabel}>
-                {customText.bankDetailsLabel || 'Coordonnées Bancaires'}
-              </Text>
-              <Text style={styles.sidebarValue}>
-                IBAN: {user?.iban || user?.bankDetails?.iban || 'N/A'}{'\n'}
-                BIC: {user?.bic || user?.bankDetails?.bic || 'N/A'}
+                {user?.address?.zipCode && user?.address?.city && `${user.address.zipCode} ${user.address.city}\n`}
+                {user?.email && `${user.email}\n`}
+                {user?.phone && user.phone}
               </Text>
             </View>
           )}
         </View>
 
-        {/* ═══ CONTENU PRINCIPAL ═══ */}
+        {/* Contenu principal */}
         <View style={styles.mainContent}>
-          <Text style={styles.invoiceTitle}>{customText.invoiceTitle || 'FACTURE'}</Text>
+          {/* En-tête facture */}
+          <Text style={styles.invoiceTitle}>FACTURE</Text>
           <Text style={styles.invoiceNumber}>N° {invoice.invoiceNumber}</Text>
-          <Text style={styles.invoiceDates}>
-            Date: {new Date(invoice.issueDate).toLocaleDateString('fr-FR')}
-            {invoice.dueDate && `\nÉchéance: ${new Date(invoice.dueDate).toLocaleDateString('fr-FR')}`}
+          <Text style={styles.dates}>
+            Date : {formatDate(invoice.issueDate)}
+            {invoice.dueDate && ` | Échéance : ${formatDate(invoice.dueDate)}`}
           </Text>
 
+          {/* Section client */}
           {sections.showClientDetails && (
-            <View style={styles.clientCard}>
-              <Text style={styles.clientLabel}>Facturé à</Text>
-              <Text style={styles.clientName}>{client?.name || 'Client'}</Text>
+            <View style={styles.clientSection}>
+              <Text style={styles.clientTitle}>Client</Text>
               <Text style={styles.clientDetails}>
+                {client?.name || 'Client'}{'\n'}
                 {client?.address?.street && `${client.address.street}\n`}
-                {client?.address?.zipCode && client?.address?.city &&
-                  `${client.address.zipCode} ${client.address.city}\n`}
-                {client?.email && `${client.email}\n`}
-                {client?.companyInfo?.siret && `SIRET: ${client.companyInfo.siret}`}
+                {client?.address?.zipCode && client?.address?.city && `${client.address.zipCode} ${client.address.city}\n`}
+                {client?.email && client.email}
               </Text>
             </View>
           )}
 
+          {/* Tableau des items */}
           <View style={styles.table}>
             <View style={styles.tableHeader}>
-              <Text style={styles.colQty}>Qté</Text>
-              <Text style={styles.colDesc}>Description</Text>
-              <Text style={styles.colUnit}>P.U. HT</Text>
-              <Text style={styles.colTax}>TVA</Text>
-              <Text style={styles.colTotal}>Total HT</Text>
+              <Text style={[styles.tableHeaderText, styles.col1]}>Description</Text>
+              <Text style={[styles.tableHeaderText, styles.col2]}>Quantité</Text>
+              <Text style={[styles.tableHeaderText, styles.col3]}>Prix HT</Text>
+              <Text style={[styles.tableHeaderText, styles.col4]}>Total HT</Text>
             </View>
-
-            {invoice.items.map((item: any, index: number) => (
-              <View key={index} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
-                <Text style={styles.colQty}>{item.quantity}</Text>
-                <View style={styles.colDesc}>
-                  <Text style={styles.itemDesc}>{item.description}</Text>
-                  {sections.showItemDetails && item.details && (
-                    <Text style={styles.itemDetail}>{item.details}</Text>
-                  )}
+            {invoice.items?.map((item: any, index: number) => {
+              const itemTotal = (item.quantity || 0) * (item.unitPrice || 0);
+              return (
+                <View key={index} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, styles.col1]}>{item.description}</Text>
+                  <Text style={[styles.tableCell, styles.col2]}>{item.quantity}</Text>
+                  <Text style={[styles.tableCell, styles.col3]}>{formatCurrency(item.unitPrice)} €</Text>
+                  <Text style={[styles.tableCell, styles.col4]}>{formatCurrency(itemTotal)} €</Text>
                 </View>
-                <Text style={styles.colUnit}>{formatCurrency(item.unitPrice)} €</Text>
-                <Text style={styles.colTax}>{formatPercentage(item.taxRate)}%</Text>
-                <Text style={styles.colTotal}>
-                  {formatCurrency(item.quantity * item.unitPrice)} €
-                </Text>
+              );
+            })}
+          </View>
+
+          {/* Totaux */}
+          <View style={styles.totalsSection}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Sous-total HT</Text>
+              <Text style={styles.totalValue}>{formatCurrency(invoice.subtotal || 0)} €</Text>
+            </View>
+            {Object.entries(vatByRate).map(([rate, data]: [string, any]) => (
+              <View key={rate} style={styles.totalRow}>
+                <Text style={styles.totalLabel}>TVA {rate}%</Text>
+                <Text style={styles.totalValue}>{formatCurrency(data.amount)} €</Text>
               </View>
             ))}
-          </View>
-
-          <View style={styles.totalsSection}>
-            <View style={styles.totalsBox}>
-              <View style={styles.totalRow}>
-                <Text>Total HT:</Text>
-                <Text>{formatCurrency(invoice.subtotal || 0)} €</Text>
-              </View>
-              {Object.entries(vatByRate)
-                .filter(([_, amount]) => Number(amount) > 0)
-                .map(([rate, amount]) => (
-                  <View key={rate} style={styles.totalRow}>
-                    <Text>TVA ({formatPercentage(Number(rate))}%):</Text>
-                    <Text>{formatCurrency(amount)} €</Text>
-                  </View>
-                ))}
-              <View style={styles.totalRowFinal}>
-                <Text>TOTAL TTC</Text>
-                <Text>{formatCurrency(invoice.total || 0)} €</Text>
-              </View>
+            <View style={styles.finalTotal}>
+              <Text style={styles.finalTotalLabel}>Total TTC</Text>
+              <Text style={styles.finalTotalValue}>{formatCurrency(invoice.total || 0)} €</Text>
             </View>
           </View>
 
-          {sections.showLegalMentions && customText.legalMentions && (
-            <View style={styles.footer}>
-              <Text>{customText.legalMentions}</Text>
+          {/* Coordonnées bancaires */}
+          {sections.showBankDetails && (
+            <View style={styles.bankDetails}>
+              <Text style={styles.bankTitle}>Coordonnées bancaires</Text>
+              <Text style={styles.bankInfo}>
+                {user?.iban && `IBAN : ${user.iban}\n`}
+                {user?.bankName && user.bankName}
+              </Text>
             </View>
           )}
+
+          {/* Mentions légales */}
+          {sections.showLegalMentions && legalMentions && (
+            <Text style={styles.legalMentions}>{legalMentions}</Text>
+          )}
+
+          {/* Footer */}
+          <Text style={styles.footer}>
+            {user?.companyName || 'Entreprise'} - Document généré électroniquement
+          </Text>
         </View>
       </Page>
     </Document>

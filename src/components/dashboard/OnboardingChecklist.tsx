@@ -69,7 +69,7 @@ export default function OnboardingChecklist({ user, stats }: OnboardingChecklist
       title: 'Complétez votre profil',
       description: 'Ajoutez vos informations d\'entreprise pour créer des factures conformes',
       completed: isProfileComplete,
-      link: '/dashboard/settings',
+      link: '/dashboard/settings?edit=true',
       icon: '👤',
     },
     {

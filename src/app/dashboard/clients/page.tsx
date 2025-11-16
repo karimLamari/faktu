@@ -28,6 +28,11 @@ export default async function ClientsPage() {
     ...client,
     _id: client._id.toString(),
     userId: client.userId.toString(),
+    // Convertir les _id des contracts aussi
+    contracts: client.contracts?.map((contract: any) => ({
+      ...contract,
+      _id: contract._id?.toString(),
+    })) || [],
   }));
   return (
     <ClientList initialClients={clientsData} isProfileComplete={isProfileComplete} />

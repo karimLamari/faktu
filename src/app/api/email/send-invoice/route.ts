@@ -130,12 +130,21 @@ export async function POST(req: NextRequest) {
     const htmlContent = getInvoiceEmailHtml(emailData);
     const textContent = getInvoiceEmailText(emailData);
 
-    // Get user template for PDF generation
-    const userTemplate = await InvoiceTemplate.findOne({
-      userId: user._id,
-      isDefault: true
-    });
-    const template = userTemplate || DEFAULT_TEMPLATE;
+    // Get template for PDF generation (prioritize invoice snapshot for consistency)
+    let template;
+    if (invoice.templateSnapshot) {
+      // Utiliser le snapshot de la facture (garantit Preview = PDF = Email)
+      template = invoice.templateSnapshot;
+      console.log(`📋 Email: Utilisation du template snapshot: ${template.name}`);
+    } else {
+      // Facture ancienne : utiliser le template actuel (comportement legacy)
+      const userTemplate = await InvoiceTemplate.findOne({
+        userId: user._id,
+        isDefault: true
+      });
+      template = userTemplate || DEFAULT_TEMPLATE;
+      console.log(`⚠️ Email: Facture sans snapshot, utilisation template actuel: ${template.name}`);
+    }
 
     // Generate PDF attachment with @react-pdf/renderer
     const pdfBuffer = await generateInvoicePdf({

@@ -74,6 +74,7 @@ export default function InvoiceTemplatesPage() {
           setCurrentTemplate({
             name: defaultTemplate.name,
             description: defaultTemplate.description || '',
+            templateComponent: defaultTemplate.templateComponent || 'ModerneTemplate',
             colors: { ...defaultTemplate.colors },
             fonts: { ...defaultTemplate.fonts, size: { ...defaultTemplate.fonts?.size } },
             layout: { ...defaultTemplate.layout },
@@ -102,6 +103,7 @@ export default function InvoiceTemplatesPage() {
     setCurrentTemplate({
       name: template.name,
       description: template.description || '',
+      templateComponent: template.templateComponent || 'ModerneTemplate',
       colors: { ...template.colors },
       fonts: { ...template.fonts, size: { ...template.fonts?.size } },
       layout: { ...template.layout },
@@ -161,6 +163,7 @@ export default function InvoiceTemplatesPage() {
       const payload = {
         name: templateName,
         description: `Template basé sur ${selectedPresetId}`,
+        templateComponent: currentTemplate.templateComponent || 'ModerneTemplate',
         isDefault: true, // Définir comme template par défaut
         colors: currentTemplate.colors,
         fonts: currentTemplate.fonts,

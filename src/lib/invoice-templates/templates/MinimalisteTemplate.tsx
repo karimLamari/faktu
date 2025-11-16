@@ -26,6 +26,9 @@ export const MinimalisteTemplate: React.FC<MinimalisteTemplateProps> = ({
   const { colors, sections, customText } = template;
   const vatByRate = calculateVATByRate(invoice);
 
+  // Utiliser les mentions légales du template personnalisé
+  const legalMentions = customText?.legalMentions || '';
+
   // Styles minimalistes - TOUT CENTRÉ, AUCUNE BORDURE (COMPACT)
   const styles = StyleSheet.create({
     page: {
@@ -294,11 +297,11 @@ export const MinimalisteTemplate: React.FC<MinimalisteTemplateProps> = ({
             <Text>{formatCurrency(invoice.subtotal || 0)} €</Text>
           </View>
           {Object.entries(vatByRate)
-            .filter(([_, amount]) => Number(amount) > 0)
-            .map(([rate, amount]) => (
+            .filter(([_, data]) => Number(data.amount) > 0)
+            .map(([rate, data]) => (
               <View key={rate} style={styles.totalRow}>
                 <Text>VAT {formatPercentage(Number(rate))}%</Text>
-                <Text>{formatCurrency(amount)} €</Text>
+                <Text>{formatCurrency(data.amount)} €</Text>
               </View>
             ))}
           <View style={styles.totalRowFinal}>
@@ -314,15 +317,19 @@ export const MinimalisteTemplate: React.FC<MinimalisteTemplateProps> = ({
               <Text style={styles.bankLabel}>Bank Details</Text>
               <Text style={styles.bankDetails}>
                 IBAN: {user?.iban || user?.bankDetails?.iban || 'N/A'}
-                {' · '}
-                BIC: {user?.bic || user?.bankDetails?.bic || 'N/A'}
+                {(user?.bic || user?.bankDetails?.bic) && (
+                  <>
+                    {' · '}
+                    BIC: {user?.bic || user?.bankDetails?.bic}
+                  </>
+                )}
               </Text>
             </>
           )}
 
-          {sections.showLegalMentions && customText.legalMentions && (
+          {sections.showLegalMentions && legalMentions && (
             <Text style={styles.legalMentions}>
-              {customText.legalMentions}
+              {legalMentions}
             </Text>
           )}
         </View>

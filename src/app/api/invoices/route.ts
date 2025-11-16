@@ -3,9 +3,11 @@ import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
 import Invoice from '@/models/Invoice';
 import Client from '@/models/Client';
+import InvoiceTemplate from '@/models/InvoiceTemplate';
 import { invoiceSchema } from '@/lib/validations';
 import { getNextInvoiceNumber } from '@/lib/services/invoice-numbering';
 import { checkInvoiceLimit, incrementInvoiceUsage } from '@/lib/subscription/checkAccess';
+import { DEFAULT_TEMPLATE } from '@/lib/invoice-templates';
 import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
@@ -57,10 +59,31 @@ export async function POST(request: NextRequest) {
 
     // Validation métier
     if (amountPaid > total) {
-      return NextResponse.json({ 
-        error: 'Le montant payé ne peut pas dépasser le total' 
+      return NextResponse.json({
+        error: 'Le montant payé ne peut pas dépasser le total'
       }, { status: 400 });
     }
+
+    // Récupérer le template par défaut ou utiliser le template moderne
+    // Le template est capturé au moment de la création pour garantir la cohérence
+    const userTemplate = await InvoiceTemplate.findOne({
+      userId: session.user.id,
+      isDefault: true
+    });
+
+    const selectedTemplate = userTemplate || DEFAULT_TEMPLATE;
+
+    // Créer un snapshot du template pour immuabilité (conformité légale)
+    const templateSnapshot = {
+      name: selectedTemplate.name,
+      description: selectedTemplate.description,
+      templateComponent: selectedTemplate.templateComponent || 'ModerneTemplate',
+      colors: selectedTemplate.colors,
+      fonts: selectedTemplate.fonts,
+      layout: selectedTemplate.layout,
+      sections: selectedTemplate.sections,
+      customText: selectedTemplate.customText,
+    };
 
     const invoice = await Invoice.create({
       ...validatedData,
@@ -69,6 +92,9 @@ export async function POST(request: NextRequest) {
       status: 'draft',
       amountPaid,
       balanceDue,
+      // Capturer le template utilisé pour cette facture
+      templateId: userTemplate?._id || null,
+      templateSnapshot,
     });
 
     // Incrémenter l'usage après création réussie

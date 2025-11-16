@@ -26,6 +26,9 @@ export const ClassiqueTemplate: React.FC<ClassiqueTemplateProps> = ({
   const { sections, customText, colors } = template;
   const vatByRate = calculateVATByRate(invoice);
 
+  // Utiliser les mentions légales du template personnalisé
+  const legalMentions = customText?.legalMentions || '';
+
   // Styles internes pour template Classique
   const styles = StyleSheet.create({
     page: {
@@ -244,10 +247,10 @@ export const ClassiqueTemplate: React.FC<ClassiqueTemplateProps> = ({
               <Text>{formatCurrency(invoice.subtotal)} €</Text>
             </View>
 
-            {Object.entries(vatByRate).map(([rate, amount]) => (
+            {Object.entries(vatByRate).map(([rate, data]) => (
               <View key={rate} style={styles.totalRow}>
                 <Text>TVA ({Number(rate).toFixed(1)}%):</Text>
-                <Text>{formatCurrency(Number(amount))} €</Text>
+                <Text>{formatCurrency(data.amount)} €</Text>
               </View>
             ))}
 
@@ -271,9 +274,9 @@ export const ClassiqueTemplate: React.FC<ClassiqueTemplateProps> = ({
         )}
 
         {/* Mentions légales - compact */}
-        {sections.showLegalMentions && customText.legalMentions && (
+        {sections.showLegalMentions && legalMentions && (
           <View style={styles.footer}>
-            <Text>{customText.legalMentions}</Text>
+            <Text>{legalMentions}</Text>
           </View>
         )}
       </Page>

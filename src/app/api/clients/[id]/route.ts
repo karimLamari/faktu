@@ -20,11 +20,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'ID de client invalide' }, { status: 400 });
     }
     await dbConnect();
-    const client = await Client.findOne({ _id: id, userId: session.user.id });
+    const client = await Client.findOne({ _id: id, userId: session.user.id }).lean();
     if (!client) {
       return NextResponse.json({ error: 'Client non trouvé' }, { status: 404 });
     }
-    return NextResponse.json(client, { status: 200 });
+    
+    // Convert ObjectIds to strings for Client Components
+    const clientData = {
+      ...client,
+      _id: client._id.toString(),
+      userId: client.userId.toString(),
+      contracts: client.contracts?.map((contract: any) => ({
+        ...contract,
+        _id: contract._id?.toString(),
+      })) || [],
+    };
+    
+    return NextResponse.json(clientData, { status: 200 });
   } catch (error) {
     console.error('Erreur lors de la récupération du client:', error);
     return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });
@@ -70,11 +82,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       { _id: id, userId: session.user.id },
       { $set: validatedData },
       { new: true, runValidators: true }
-    );
+    ).lean();
     if (!updatedClient) {
       return NextResponse.json({ error: 'Client non trouvé ou non autorisé à modifier' }, { status: 404 });
     }
-    return NextResponse.json(updatedClient, { status: 200 });
+    
+    // Convert ObjectIds to strings for Client Components
+    const clientData = {
+      ...updatedClient,
+      _id: updatedClient._id.toString(),
+      userId: updatedClient.userId.toString(),
+      contracts: updatedClient.contracts?.map((contract: any) => ({
+        ...contract,
+        _id: contract._id?.toString(),
+      })) || [],
+    };
+    
+    return NextResponse.json(clientData, { status: 200 });
   } catch (error) {
     console.error('Erreur lors de la mise à jour du client:', error);
     if (error instanceof z.ZodError) {

@@ -40,14 +40,24 @@ export async function GET(request: NextRequest, context: any) {
     }, { status: 400 });
   }
 
-  // Récupérer le template par défaut de l'utilisateur ou utiliser le template moderne
-  const userTemplate = await InvoiceTemplate.findOne({
-    userId: invoice.userId,
-    isDefault: true
-  });
+  // Récupérer le template de la facture (snapshot) ou template actuel de l'utilisateur
+  // Priorité au templateSnapshot pour garantir cohérence (Preview = PDF final)
+  let rawTemplate;
 
-  const rawTemplate = userTemplate || DEFAULT_TEMPLATE;
-  
+  if (invoice.templateSnapshot) {
+    // Utiliser le snapshot de la facture (garantit Preview = PDF)
+    rawTemplate = invoice.templateSnapshot;
+    console.log(`📋 Utilisation du template snapshot: ${rawTemplate.name}`);
+  } else {
+    // Facture ancienne : utiliser le template actuel (comportement legacy)
+    const userTemplate = await InvoiceTemplate.findOne({
+      userId: invoice.userId,
+      isDefault: true
+    });
+    rawTemplate = userTemplate || DEFAULT_TEMPLATE;
+    console.log(`⚠️ Facture sans snapshot, utilisation template actuel: ${rawTemplate.name}`);
+  }
+
   // Valider le template avant utilisation (fallback si invalide)
   const template = validateTemplate(rawTemplate, DEFAULT_TEMPLATE);
 

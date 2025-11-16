@@ -47,6 +47,9 @@ export interface IInvoice extends Document {
   // Soft delete pour factures finalisées
   deletedAt?: Date;                  // Date de suppression logique
   deletedBy?: mongoose.Types.ObjectId;    // Utilisateur ayant supprimé
+  // Template utilisé (pour cohérence et conformité légale)
+  templateId?: mongoose.Types.ObjectId;  // Référence vers InvoiceTemplate
+  templateSnapshot?: any;                 // Snapshot complet du template au moment de la création
   createdAt: Date;
   updatedAt: Date;
 }
@@ -110,6 +113,17 @@ const InvoiceSchema = new Schema<IInvoice>({
   // Soft delete
   deletedAt: { type: Date, index: true },
   deletedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+  // Template (optionnel pour compatibilité avec factures existantes)
+  templateId: {
+    type: Schema.Types.ObjectId,
+    ref: 'InvoiceTemplate',
+    required: false,
+    index: true
+  },
+  templateSnapshot: {
+    type: Schema.Types.Mixed,
+    required: false
+  },
 }, { timestamps: true });
 
 // Indexes

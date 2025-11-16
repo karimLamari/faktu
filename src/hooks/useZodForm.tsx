@@ -116,20 +116,34 @@ export function useZodForm<T extends Record<string, any>>(
       await schema.parseAsync(formData);
       setErrors({});
       setIsValidating(false);
-      return false;
+      return true; // ✅ Valide
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const newErrors: Partial<Record<keyof T, string>> = {};
+        const newErrors: Partial<Record<keyof T, any>> = {};
         error.issues.forEach((err: any) => {
-          const field = err.path[0] as keyof T;
-          if (field && !newErrors[field]) {
-            newErrors[field] = err.message;
+          // Gérer les erreurs nested (ex: companyInfo.legalName)
+          if (err.path.length > 1) {
+            const [parent, child] = err.path;
+            const parentKey = parent as keyof T;
+            if (!newErrors[parentKey]) {
+              newErrors[parentKey] = {};
+            }
+            const parentObj = newErrors[parentKey];
+            if (typeof parentObj === 'object' && parentObj !== null) {
+              (parentObj as Record<string, string>)[child] = err.message;
+            }
+          } else {
+            // Erreurs simples (ex: firstName, lastName)
+            const field = err.path[0] as keyof T;
+            if (field && !newErrors[field]) {
+              newErrors[field] = err.message;
+            }
           }
         });
         setErrors(newErrors);
       }
       setIsValidating(false);
-      return false;
+      return false; // ❌ Invalide
     }
   }, [formData, schema]);
 

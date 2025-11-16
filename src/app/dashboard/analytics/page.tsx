@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   TrendingUp,
   TrendingDown,
@@ -11,6 +12,7 @@ import {
   FileText,
   ArrowUpRight,
   Loader2,
+  Lock,
 } from 'lucide-react';
 import { KPICard } from '@/components/analytics/KPICard';
 import { DateRangeSelector } from '@/components/analytics/DateRangeSelector';
@@ -19,6 +21,8 @@ import { ExpenseByCategoryChart } from '@/components/analytics/ExpenseByCategory
 import { TopClientsChart } from '@/components/analytics/TopClientsChart';
 import { VATBreakdownChart } from '@/components/analytics/VATBreakdownChart';
 import { PeriodType } from '@/lib/analytics/utils';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradeModal } from '@/components/subscription/UpgradeModal';
 
 interface AnalyticsData {
   kpis: {
@@ -67,14 +71,28 @@ interface AnalyticsData {
 }
 
 export default function AnalyticsPage() {
+  const router = useRouter();
+  const { data: subscriptionData, loading: subscriptionLoading } = useSubscription();
   const [period, setPeriod] = useState<PeriodType>('this_month');
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Vérifier l'accès aux analytics (Pro/Business uniquement)
+  const hasAccess = subscriptionData?.plan && ['pro', 'business'].includes(subscriptionData.plan);
 
   useEffect(() => {
-    fetchAnalytics();
-  }, [period]);
+    if (!subscriptionLoading) {
+      if (!hasAccess) {
+        // Afficher la modale d'upgrade
+        setShowUpgradeModal(true);
+        setLoading(false);
+      } else {
+        fetchAnalytics();
+      }
+    }
+  }, [period, hasAccess, subscriptionLoading]);
 
   const fetchAnalytics = async () => {
     try {
@@ -97,6 +115,81 @@ export default function AnalyticsPage() {
       setLoading(false);
     }
   };
+
+  if (subscriptionLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mx-auto mb-4" />
+          <p className="text-gray-400">Vérification de votre abonnement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Afficher la modale d'upgrade si pas d'accès
+  if (!hasAccess) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center px-4">
+          <div className="max-w-4xl w-full">
+            {/* Aperçu flou des analytiques */}
+            <div className="relative">
+              {/* Overlay de flou */}
+              <div className="absolute inset-0 backdrop-blur-xl bg-gray-900/60 z-10 flex items-center justify-center rounded-2xl border-2 border-indigo-500/30">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-indigo-500/50">
+                    <Lock className="w-10 h-10 text-indigo-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    Analytiques Avancées
+                  </h2>
+                  <p className="text-gray-300 mb-6 max-w-md mx-auto">
+                    Débloquez les statistiques en temps réel, l'analyse par client, la gestion TVA et bien plus encore
+                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="px-3 py-1 bg-indigo-500/20 border border-indigo-500/50 rounded-full text-sm text-indigo-300 font-semibold">
+                      Pro
+                    </span>
+                    <span className="text-gray-400">ou</span>
+                    <span className="px-3 py-1 bg-purple-500/20 border border-purple-500/50 rounded-full text-sm text-purple-300 font-semibold">
+                      Business
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contenu fantôme en arrière-plan */}
+              <div className="p-8 space-y-6 opacity-40">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 h-32" />
+                  ))}
+                </div>
+                <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 h-64" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 h-64" />
+                  <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 h-64" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modale d'upgrade */}
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => {
+            setShowUpgradeModal(false);
+            router.push('/dashboard');
+          }}
+          feature="Analytiques avancées"
+          currentPlan={(subscriptionData?.plan as any) || 'free'}
+          requiredPlan="pro"
+        />
+      </>
+    );
+  }
 
   if (loading) {
     return (

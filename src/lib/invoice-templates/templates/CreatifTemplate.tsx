@@ -26,6 +26,9 @@ export const CreatifTemplate: React.FC<CreatifTemplateProps> = ({
   const { colors, sections, customText } = template;
   const vatByRate = calculateVATByRate(invoice);
 
+  // Utiliser les mentions légales du template personnalisé
+  const legalMentions = customText?.legalMentions || '';
+
   // Styles créatifs - ASYMÉTRIQUE ET MODERNE (COMPACT)
   const styles = StyleSheet.create({
     page: {
@@ -351,11 +354,11 @@ export const CreatifTemplate: React.FC<CreatifTemplateProps> = ({
               <Text>{formatCurrency(invoice.subtotal)} €</Text>
             </View>
             {Object.entries(vatByRate)
-              .filter(([_, amount]) => Number(amount) > 0)
-              .map(([rate, amount]) => (
-                <View key={rate} style={styles.totalRowVat}>
-                  <Text>TVA {formatPercentage(Number(rate))}%</Text>
-                  <Text>{formatCurrency(amount)} €</Text>
+              .filter(([_, data]) => Number(data.amount) > 0)
+              .map(([rate, data]) => (
+                <View key={rate} style={styles.totalRow}>
+                  <Text>TVA {formatPercentage(Number(rate))}%:</Text>
+                  <Text>{formatCurrency(data.amount)} €</Text>
                 </View>
               ))}
             <View style={styles.totalRowFinal}>
@@ -374,18 +377,20 @@ export const CreatifTemplate: React.FC<CreatifTemplateProps> = ({
                   {customText.bankDetailsLabel || 'Coordonnées Bancaires'}
                 </Text>
                 <Text style={styles.footerText}>
-                  IBAN: {user?.iban || user?.bankDetails?.iban || 'N/A'}{'\n'}
-                  BIC: {user?.bic || user?.bankDetails?.bic || 'N/A'}
+                  IBAN: {user?.iban || user?.bankDetails?.iban || 'N/A'}
+                  {(user?.bic || user?.bankDetails?.bic) && (
+                    <>{'\n'}BIC: {user?.bic || user?.bankDetails?.bic}</>
+                  )}
                 </Text>
               </>
             )}
           </View>
 
           <View style={styles.footerRight}>
-            {sections.showLegalMentions && customText.legalMentions && (
+            {sections.showLegalMentions && legalMentions && (
               <>
                 <Text style={styles.footerTitle}>Mentions Légales</Text>
-                <Text style={styles.footerText}>{customText.legalMentions}</Text>
+                <Text style={styles.footerText}>{legalMentions}</Text>
               </>
             )}
           </View>

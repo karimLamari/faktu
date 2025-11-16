@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
+import User, { type ISubscription } from '@/models/User';
 import {
   getRevenueOverview,
   getExpenseOverview,
@@ -16,6 +17,7 @@ import { getDateRangeForPeriod, getPreviousPeriod, type PeriodType } from '@/lib
 /**
  * GET /api/analytics/overview
  * Returns comprehensive analytics data for the dashboard
+ * RESTRICTION: Pro et Business uniquement
  *
  * Query params:
  * - period: 'this_month' | 'last_month' | 'this_quarter' | 'this_year' | 'last_year' | 'custom'
@@ -30,6 +32,20 @@ export async function GET(request: NextRequest) {
     }
 
     await dbConnect();
+
+    // Vérifier l'abonnement (Pro/Business uniquement)
+    const user = await User.findById(session.user.id).select('subscription').lean<{
+      subscription?: ISubscription;
+    }>();
+    const plan = user?.subscription?.plan || 'free';
+    
+    if (!['pro', 'business'].includes(plan)) {
+      return NextResponse.json({ 
+        error: 'Fonctionnalité Premium', 
+        message: 'Les analytiques avancées sont disponibles uniquement pour les abonnements Pro et Business.',
+        requiredPlan: ['pro', 'business']
+      }, { status: 403 });
+    }
 
     // Parse query parameters
     const { searchParams } = request.nextUrl;

@@ -9,11 +9,11 @@ import { PlanBadge } from '@/components/subscription/PlanBadge';
 import { useSubscription } from '@/hooks/useSubscription';
 import { SpaceBackground } from '@/components/ui/SpaceBackground';
 import Image from 'next/image';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  Settings, 
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  Settings,
   LogOut,
   Menu,
   X,
@@ -22,18 +22,35 @@ import {
   Receipt,
   Palette,
   CreditCard,
-  Zap
+  Zap,
+  BarChart3,
+  Archive
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const navigationItems = [
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+  requiresPlan?: string[];
+}
+
+const navigationItems: NavigationItem[] = [
   {
     name: 'Tableau de bord',
     href: '/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    name: 'Analytiques',
+    href: '/dashboard/analytics',
+    icon: BarChart3,
+    badge: 'Pro',
+    requiresPlan: ['pro', 'business'],
   },
   {
     name: 'Clients',
@@ -66,6 +83,11 @@ const navigationItems = [
     name: 'Modèles de facture',
     href: '/dashboard/settings/invoice-templates',
     icon: Palette,
+  },
+  {
+    name: 'Archives',
+    href: '/dashboard/settings/archives',
+    icon: Archive,
   },
   {
     name: 'Tarifs',
@@ -160,22 +182,33 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
+                const userPlan = subscriptionData?.plan || 'free';
+                const hasAccess = !item.requiresPlan || item.requiresPlan.includes(userPlan);
+                
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     className={`
-                      group flex items-center px-4 py-3.5 text-sm font-semibold rounded-xl
+                      group flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-xl
                       transition-all duration-200
                       ${isActive
                         ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/50'
                         : 'text-gray-200 hover:bg-gray-800/50'
                       }
+                      ${!hasAccess ? 'opacity-60' : ''}
                     `}
                     onClick={() => setSidebarOpen(false)}
                   >
-                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                    <span>{item.name}</span>
+                    <div className="flex items-center">
+                      <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                      <span>{item.name}</span>
+                    </div>
+                    {item.badge && (
+                      <span className="px-2 py-0.5 text-xs font-bold bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -227,21 +260,32 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
+                const userPlan = subscriptionData?.plan || 'free';
+                const hasAccess = !item.requiresPlan || item.requiresPlan.includes(userPlan);
+                
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     className={`
-                      group flex items-center px-4 py-3.5 text-sm font-semibold rounded-xl
+                      group flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-xl
                       transition-all duration-200
                       ${isActive
                         ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/50'
                         : 'text-gray-200 hover:bg-gray-800/50'
                       }
+                      ${!hasAccess ? 'opacity-60' : ''}
                     `}
                   >
-                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                    <span>{item.name}</span>
+                    <div className="flex items-center">
+                      <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                      <span>{item.name}</span>
+                    </div>
+                    {item.badge && (
+                      <span className="px-2 py-0.5 text-xs font-bold bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

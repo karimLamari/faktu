@@ -76,6 +76,7 @@ export const TemplateCustomTextSchema = z.object({
 export const TemplatePresetSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().optional(),
+  templateComponent: z.enum(['ModerneTemplate', 'ClassiqueTemplate', 'MinimalisteTemplate', 'StudioTemplate', 'CreatifTemplate']).optional(),
   colors: TemplateColorsSchema,
   fonts: TemplateFontsSchema,
   layout: TemplateLayoutSchema,

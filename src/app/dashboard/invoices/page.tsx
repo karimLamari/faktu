@@ -31,13 +31,22 @@ export default async function InvoicesPage() {
     _id: invoice._id.toString(),
     userId: invoice.userId.toString(),
     clientId: invoice.clientId?.toString() || null,
+    templateId: invoice.templateId?.toString() || null,
+    deletedBy: invoice.deletedBy?.toString() || null,
+    finalizedBy: invoice.finalizedBy?.toString() || null,
     issueDate: invoice.issueDate ? new Date(invoice.issueDate).toISOString() : null,
     dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString() : null,
+    sentAt: invoice.sentAt ? new Date(invoice.sentAt).toISOString() : null,
+    deletedAt: invoice.deletedAt ? new Date(invoice.deletedAt).toISOString() : null,
     createdAt: invoice.createdAt ? new Date(invoice.createdAt).toISOString() : null,
     updatedAt: invoice.updatedAt ? new Date(invoice.updatedAt).toISOString() : null,
     finalizedAt: invoice.finalizedAt ? new Date(invoice.finalizedAt).toISOString() : null,
     pdfGeneratedAt: invoice.pdfGeneratedAt ? new Date(invoice.pdfGeneratedAt).toISOString() : null,
-    finalizedBy: invoice.finalizedBy ? invoice.finalizedBy.toString() : null,
+    // Convertir les reminders si présents
+    reminders: invoice.reminders?.map((reminder: any) => ({
+      ...reminder,
+      sentAt: reminder.sentAt ? new Date(reminder.sentAt).toISOString() : null,
+    })) || [],
   }));
   const clientsData = clients.map((client: any) => ({
     ...client,

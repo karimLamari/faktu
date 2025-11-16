@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ProfileCard from '@/components/profile/ProfileCard';
 import ProfileForm from '@/components/profile/ProfileForm';
 import ProfileWizard from '@/components/profile/ProfileWizard';
@@ -21,13 +22,16 @@ const initialState: ProfileData = {
   email: '',
 };
 
-export default function ProfileSettings() {
+function ProfileSettingsContent() {
+  const searchParams = useSearchParams();
+  const shouldEdit = searchParams.get('edit') === 'true';
+  
   const [profile, setProfile] = useState<ProfileData>(initialState);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(shouldEdit);
   const [profileComplete, setProfileComplete] = useState(false);
 
   useEffect(() => {
@@ -219,5 +223,13 @@ export default function ProfileSettings() {
           />
         )}
       </div>
+  );
+}
+
+export default function ProfileSettings() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen">Chargement...</div>}>
+      <ProfileSettingsContent />
+    </Suspense>
   );
 }

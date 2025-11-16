@@ -11,6 +11,7 @@ import mongoose from 'mongoose';
 const templatePartialSchema = z.object({
   name: z.string().min(1, 'Nom requis').max(100, 'Nom trop long').optional(),
   description: z.string().max(500, 'Description trop longue').optional(),
+  templateComponent: z.enum(['ModerneTemplate', 'ClassiqueTemplate', 'MinimalisteTemplate', 'StudioTemplate', 'CreatifTemplate']).optional(),
   isDefault: z.boolean().optional(),
   colors: z.object({
     primary: z.string().regex(/^#[0-9A-F]{6}$/i, 'Couleur invalide'),

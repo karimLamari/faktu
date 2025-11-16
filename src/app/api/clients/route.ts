@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/auth';
 import dbConnect from '@/lib/db/mongodb';
-import Client from '@/models/Client';
+import Client, { type IClient } from '@/models/Client';
 import { clientSchema } from '@/lib/validations';
 import { z } from 'zod';
 import { checkClientLimit, incrementClientUsage, decrementClientUsage } from '@/lib/subscription/checkAccess';
+import mongoose from 'mongoose';
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -44,12 +45,23 @@ export async function POST(request: NextRequest) {
     const newClient = await Client.create({
       ...validatedData,
       userId: session.user.id,
-    });
+    }) as IClient & { _id: mongoose.Types.ObjectId };
     
     // Incrémenter le compteur de clients
     await incrementClientUsage();
     
-    return NextResponse.json(newClient, { status: 201 });
+    // Convert ObjectIds to strings for Client Components
+    const clientData = {
+      ...newClient.toObject(),
+      _id: newClient._id.toString(),
+      userId: newClient.userId.toString(),
+      contracts: newClient.contracts?.map((contract: any) => ({
+        ...contract,
+        _id: contract._id?.toString(),
+      })) || [],
+    };
+    
+    return NextResponse.json(clientData, { status: 201 });
   } catch (error) {
     console.error('Erreur lors de la création du client:', error);
     if (error instanceof z.ZodError) {
@@ -70,8 +82,20 @@ export async function GET(request: NextRequest) {
   }
   try {
     await dbConnect();
-    const clients = await Client.find({ userId: session.user.id }).sort({ createdAt: -1 });
-    return NextResponse.json(clients, { status: 200 });
+    const clients = await Client.find({ userId: session.user.id }).sort({ createdAt: -1 }).lean();
+    
+    // Convert ObjectIds to strings for Client Components
+    const clientsData = clients.map((client: any) => ({
+      ...client,
+      _id: client._id.toString(),
+      userId: client.userId.toString(),
+      contracts: client.contracts?.map((contract: any) => ({
+        ...contract,
+        _id: contract._id?.toString(),
+      })) || [],
+    }));
+    
+    return NextResponse.json(clientsData, { status: 200 });
   } catch (error) {
     console.error('Erreur lors de la récupération des clients:', error);
     return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });

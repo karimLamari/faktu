@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from "react";
+import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import ServiceSelector from '@/components/common/ServiceSelector';
 import { 
@@ -50,11 +50,15 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
     setForm({ ...form, items });
   };
 
-  // Calcul automatique à chaque changement d'items
-  useEffect(() => {
-    if (!form?.items || !Array.isArray(form.items)) return;
+  // Calcul automatique des totaux (useMemo pour éviter race conditions)
+  const calculatedTotals = useMemo(() => {
+    if (!form?.items || !Array.isArray(form.items)) {
+      return { subtotal: 0, taxAmount: 0, total: 0, balanceDue: 0 };
+    }
+
     let subtotal = 0;
     let taxAmount = 0;
+
     form.items.forEach((item: any) => {
       const q = parseFloat(item.quantity) || 0;
       const up = parseFloat(item.unitPrice) || 0;
@@ -63,18 +67,12 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
       subtotal += ht;
       taxAmount += ht * (tva / 100);
     });
+
     const total = subtotal + taxAmount;
-    const amountPaid = typeof form.amountPaid === 'number' ? form.amountPaid : 0;
-    const balanceDue = total - amountPaid;
-    if (
-      form.subtotal !== subtotal ||
-      form.taxAmount !== taxAmount ||
-      form.total !== total ||
-      form.balanceDue !== balanceDue
-    ) {
-      setForm({ ...form, subtotal, taxAmount, total, balanceDue });
-    }
-    // eslint-disable-next-line
+    const amountPaid = typeof form?.amountPaid === 'number' ? form.amountPaid : 0;
+    const balanceDue = Math.max(0, total - amountPaid); // Éviter balanceDue négatif
+
+    return { subtotal, taxAmount, total, balanceDue };
   }, [form?.items, form?.amountPaid]);
 
   // Handler pour changer un champ d'item
@@ -102,6 +100,18 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
     setForm({ ...form, items });
   };
 
+  // Wrapper pour onSubmit qui inclut les totaux calculés
+  const handleFormSubmit = (e: React.FormEvent) => {
+    // Mettre à jour le form avec les totaux calculés avant de soumettre
+    setForm({
+      ...form,
+      ...calculatedTotals
+    });
+
+    // Appeler le onSubmit du parent
+    onSubmit(e);
+  };
+
   // Retour conditionnel APRÈS tous les hooks
   if (!open) return null;
 
@@ -123,7 +133,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
 
         {/* Body scrollable */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
-          <form id="invoice-form" onSubmit={onSubmit} className="space-y-6">
+          <form id="invoice-form" onSubmit={handleFormSubmit} className="space-y-6">
             {/* Avertissement mode statut uniquement */}
             {isStatusOnlyMode && (
               <div className={`${isFinalized ? 'bg-purple-900/30 border-purple-700/50' : 'bg-orange-900/30 border-orange-700/50'} border rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3`}>
@@ -155,6 +165,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                   name="clientId"
                   value={form?.clientId || ""}
                   onChange={handleFormChange}
+                  disabled={isStatusOnlyMode}
                   required
                 >
                   <option value="" className="bg-gray-800">Sélectionnez un client</option>
@@ -182,6 +193,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                         : ""
                     }
                     onChange={handleFormChange}
+                    disabled={isStatusOnlyMode}
                     required
                   />
                 </div>
@@ -202,6 +214,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                         : ""
                     }
                     onChange={handleFormChange}
+                    disabled={isStatusOnlyMode}
                     required
                   />
                 </div>
@@ -366,7 +379,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                 </label>
                 <div className="flex items-center gap-2 bg-gray-900/50 rounded-lg px-4 py-3 border border-gray-700/50">
                   <span className="text-lg font-bold text-white">
-                    {(form?.subtotal || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                    {calculatedTotals.subtotal.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                   </span>
                 </div>
               </div>
@@ -376,7 +389,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                 </label>
                 <div className="flex items-center gap-2 bg-gray-900/50 rounded-lg px-4 py-3 border border-gray-700/50">
                   <span className="text-lg font-bold text-white">
-                    {(form?.taxAmount || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                    {calculatedTotals.taxAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                   </span>
                 </div>
               </div>
@@ -387,7 +400,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                 </label>
                 <div className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg px-4 py-3 border border-green-600 shadow-lg shadow-green-500/20">
                   <span className="text-xl font-bold text-white">
-                    {(form?.total || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                    {calculatedTotals.total.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                   </span>
                 </div>
               </div>
@@ -425,7 +438,7 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                   name="status"
                   value={form?.status || "draft"}
                   onChange={handleFormChange}
-                  disabled={isStatusOnlyMode && !isFinalized}
+                  disabled={false}
                   required
                 >
                   <option value="draft" className="bg-gray-800">Brouillon</option>
@@ -483,8 +496,8 @@ const InvoiceFormModal: React.FC<InvoiceFormModalProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-orange-300 mt-2">
-                  Total : {(form?.total || 0).toFixed(2)} € • 
-                  Reste à payer : {((form?.total || 0) - (form?.amountPaid || 0)).toFixed(2)} €
+                  Total : {calculatedTotals.total.toFixed(2)} € •
+                  Reste à payer : {calculatedTotals.balanceDue.toFixed(2)} €
                 </p>
               </div>
             )}

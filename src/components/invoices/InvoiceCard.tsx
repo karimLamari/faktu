@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { IInvoice } from "@/models/Invoice";
-import { Calendar, Euro, FileText, Mail, Bell, Trash2, Edit, Download, Lock, Palette, CheckCircle, AlertCircle, Clock, XCircle, Crown, X } from "lucide-react";
+import { Calendar, Euro, FileText, Mail, Bell, Trash2, Edit, Download, Lock, Palette, CheckCircle, AlertCircle, Clock, XCircle, Crown, X, Archive } from "lucide-react";
 import { InvoicePreview } from "./InvoicePreview";
 import { TemplatePreview } from "@/lib/invoice-templates";
 import { DEFAULT_TEMPLATE, type TemplatePreset } from "@/lib/invoice-templates";
@@ -85,10 +85,19 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
   const hasPDFFeature = true; // Toujours true
 
 
-  // Charger le template par défaut au montage
+  // Charger le template de la facture (snapshot) ou template par défaut
   useEffect(() => {
     const loadTemplate = async () => {
       try {
+        // Si la facture a un templateSnapshot, l'utiliser (garantit cohérence Preview = PDF)
+        if (invoice.templateSnapshot) {
+          setTemplate(invoice.templateSnapshot);
+          console.log(`📋 Utilisation template snapshot: ${invoice.templateSnapshot.name}`);
+          setLoadingTemplate(false);
+          return;
+        }
+
+        // Sinon, charger le template par défaut de l'utilisateur (factures anciennes)
         const response = await fetch('/api/invoice-templates');
         if (response.ok) {
           const templates = await response.json();
@@ -105,7 +114,7 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
     };
 
     loadTemplate();
-  }, []);
+  }, [invoice.templateSnapshot]);
   
   // Gestion du clic sur les actions bloquées par profil incomplet
   const handleProfileIncompleteAction = (e: React.MouseEvent) => {
@@ -167,7 +176,7 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
       
       {/* Preview de la facture en arrière-plan */}
       <div className="relative h-40 bg-gray-800/50 overflow-hidden border-b border-gray-700/50">
-        <div 
+        <div
           className="absolute inset-0 flex items-start justify-center pt-2"
           style={{
             transform: 'scale(0.28)',
@@ -186,7 +195,7 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
             />
           </div>
         </div>
-        
+
         {/* Overlay gradient au hover */}
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
         
@@ -211,6 +220,16 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Badges de statut avec priorité sur isFinalized */}
                 <InvoiceStatusBadges invoice={invoice} />
+                {/* Badge de statut additionnel */}
+                <Badge className={`${config.bgLight} ${config.text} border ${config.border} text-xs font-semibold`}>
+                  <StatusIcon className="w-3 h-3 mr-1" />
+                  {invoice.status === 'draft' && 'Brouillon'}
+                  {invoice.status === 'sent' && 'Envoyée'}
+                  {invoice.status === 'paid' && 'Payée'}
+                  {invoice.status === 'partially_paid' && 'Partiellement payée'}
+                  {invoice.status === 'overdue' && 'En retard'}
+                  {invoice.status === 'cancelled' && 'Annulée'}
+                </Badge>
                 {!isProfileComplete && (
                   <Badge className="bg-orange-900/30 text-orange-400 border border-orange-700/50 text-xs font-semibold">
                     <Lock className="w-3 h-3 mr-1" />
@@ -452,9 +471,53 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
                 );
               })()}
             </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
+
+            {/* Bouton télécharger PDF archivé (factures finalisées uniquement) */}
+            {invoice.isFinalized && invoice.pdfPath && (
+              <div className="flex-1 relative group">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full rounded-xl transition-all font-medium bg-purple-900/30 border-purple-700 text-purple-300 hover:bg-purple-900/50 hover:border-purple-600"
+                  onClick={async () => {
+                    try {
+                      // Télécharger le PDF archivé
+                      const response = await fetch(`/api/invoices/${invoice._id}/download-pdf`);
+
+                      if (!response.ok) {
+                        const error = await response.json();
+                        alert(error.message || 'Erreur lors du téléchargement');
+                        return;
+                      }
+
+                      // Créer un blob et télécharger
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${invoice.invoiceNumber}.pdf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                    } catch (error) {
+                      console.error('Erreur téléchargement PDF:', error);
+                      alert('Impossible de télécharger le PDF archivé');
+                    }
+                  }}
+                >
+                  <Archive className="w-4 h-4 mr-1.5" />
+                  <span className="hidden sm:inline">Archivé</span>
+                </Button>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-gray-700">
+                  📦 Télécharger PDF archivé (légal)
+                </div>
+              </div>
+            )}
+
+            <Button
+              size="sm"
+              variant="outline"
               className={`rounded-xl transition-all px-3 ${
                 invoice.isFinalized
                   ? 'bg-gray-800/50 border-gray-700 text-gray-500 cursor-not-allowed'
@@ -478,98 +541,46 @@ const InvoiceCard: React.FC<InvoiceCardProps> = ({
       )}
     </Card>
 
-    {/* Invoice Preview Modal - Version simplifiée */}
+    {/* Invoice Preview Modal - Plein écran sans wrapper */}
     {showPreview && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
-        <div className="bg-gray-900/95 backdrop-blur-lg rounded-2xl shadow-2xl w-full h-full m-4 overflow-hidden flex flex-col animate-slide-in-up border border-gray-700/50">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-700/50 bg-gradient-to-r from-indigo-900/30 to-blue-900/30 flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-indigo-400" />
-              <h2 className="text-lg font-semibold text-white">Aperçu Facture - {invoice.invoiceNumber}</h2>
-            </div>
-            <button
-              onClick={() => setShowPreview(false)}
-              className="text-gray-400 hover:text-gray-200 transition-colors p-2 hover:bg-gray-800/50 rounded-lg"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+      <div className="fixed inset-0 z-50 bg-gray-900 animate-fade-in">
+        {/* Bouton fermer flottant */}
+        <button
+          onClick={() => setShowPreview(false)}
+          className="fixed top-4 right-4 z-10 p-3 bg-gray-800/90 hover:bg-gray-700 text-white rounded-full shadow-2xl border border-gray-600 transition-all hover:scale-110"
+        >
+          <X className="w-6 h-6" />
+        </button>
 
-          {/* Preview */}
-          <div className="flex-1 overflow-hidden bg-gray-800 flex items-center justify-center p-4">
-            <div 
-              className="shadow-2xl origin-center transition-all duration-300"
-              style={{ 
-                width: '210mm',
-                height: '297mm',
-                transform: 'scale(min(calc((100vw - 8rem) / 210mm), calc((100vh - 16rem) / 297mm)))',
-                transformOrigin: 'center center'
-              }}
-            >
-              {loadingTemplate ? (
-                <div className="w-full h-full bg-white flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600">Chargement...</p>
-                  </div>
+        {/* PDF en plein écran centré */}
+        <div className="w-full h-full flex items-center justify-center p-8">
+          <div
+            className="shadow-2xl bg-white"
+            style={{
+              width: '210mm',
+              height: '297mm',
+              transform: 'scale(min(calc((100vw - 4rem) / 210mm), calc((100vh - 4rem) / 297mm)))',
+              transformOrigin: 'center center'
+            }}
+          >
+            {loadingTemplate ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600">Chargement...</p>
                 </div>
-              ) : (
-                <TemplatePreview
-                  template={template}
-                  sampleData={{
-                    invoice,
-                    client: clientData,
-                    user: userData,
-                  }}
-                  className="w-full h-full"
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Footer Actions */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 border-t border-gray-700/50 bg-gray-800/50 flex-shrink-0">
-            <div className="text-sm text-gray-400">
-              {!isProfileComplete && (
-                <span className="text-blue-400 font-medium flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                  Profil requis pour PDF/Email
-                </span>
-              )}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <Button
-                onClick={() => setShowPreview(false)}
-                className="bg-gray-700 hover:bg-gray-600 text-gray-200 w-full sm:w-auto"
-              >
-                Fermer
-              </Button>
-              {isProfileComplete && hasEmailFeature && onSendEmail && (
-                <Button
-                  onClick={() => {
-                    onSendEmail(invoice);
-                    setShowPreview(false);
-                  }}
-                  className="flex items-center justify-center gap-2 w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/20"
-                >
-                  <Mail className="w-4 h-4" />
-                  <span className="hidden sm:inline">Envoyer</span>
-                </Button>
-              )}
-              {isProfileComplete && !!invoice._id && (
-                <Button
-                  onClick={() => {
-                    onPDF(invoice._id?.toString() || "");
-                    setShowPreview(false);
-                  }}
-                  className="flex items-center justify-center gap-2 w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/20"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">PDF</span>
-                </Button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <TemplatePreview
+                template={template}
+                sampleData={{
+                  invoice,
+                  client: clientData,
+                  user: userData,
+                }}
+                className="w-full h-full"
+              />
+            )}
           </div>
         </div>
       </div>

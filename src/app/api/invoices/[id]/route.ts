@@ -44,6 +44,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
     const validatedData = invoiceSchema.partial().parse(body);
 
+    console.log('📝 PATCH Invoice - Body reçu:', {
+      invoiceId: id,
+      receivedFields: Object.keys(body),
+      statusChange: body.status,
+      bodyData: body
+    });
+
     await dbConnect();
     
     // 🔒 VÉRIFICATION CONFORMITÉ LÉGALE
@@ -58,10 +65,83 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // ⚠️ BLOQUER MODIFICATION SI FACTURE FINALISÉE (Article L123-22 Code de commerce)
     // SAUF si on modifie uniquement le champ 'status' (pour suivi paiement)
     if (existingInvoice.isFinalized || existingInvoice.sentAt) {
-      const modifiedFields = Object.keys(validatedData);
-      const isOnlyStatusChange = modifiedFields.length === 1 && modifiedFields[0] === 'status';
+      // Filtrer les champs qui ont RÉELLEMENT changé de valeur (pas juste présents dans validatedData)
+      const existingObj = existingInvoice.toObject();
+      const actuallyModifiedFields = Object.keys(validatedData).filter(key => {
+        const newValue = validatedData[key as keyof typeof validatedData];
+        const oldValue = existingObj[key];
+        
+        // Ignorer les champs undefined ou null
+        if (newValue === undefined || newValue === null) {
+          return false;
+        }
+        
+        // Comparer les valeurs (gestion spéciale pour les objets et tableaux)
+        if (Array.isArray(newValue) && Array.isArray(oldValue)) {
+          return JSON.stringify(newValue) !== JSON.stringify(oldValue);
+        }
+        if (typeof newValue === 'object' && typeof oldValue === 'object') {
+          return JSON.stringify(newValue) !== JSON.stringify(oldValue);
+        }
+        
+        // Pour les dates, normaliser en ISO string avant comparaison
+        if (newValue instanceof Date || oldValue instanceof Date) {
+          const newDateStr = newValue instanceof Date ? newValue.toISOString() : newValue;
+          const oldDateStr = oldValue instanceof Date ? oldValue.toISOString() : oldValue;
+          return newDateStr !== oldDateStr;
+        }
+        
+        // Si newValue est une string de date ISO et oldValue est une Date, comparer après normalisation
+        if (typeof newValue === 'string' && oldValue instanceof Date) {
+          try {
+            const newDate = new Date(newValue);
+            return newDate.toISOString() !== oldValue.toISOString();
+          } catch (e) {
+            // Si ce n'est pas une date valide, comparer la string avec la date ISO string
+            return newValue !== oldValue.toISOString();
+          }
+        }
+        
+        // Pour les ObjectId, les convertir en string avant comparaison
+        if (oldValue && typeof oldValue === 'object' && oldValue.toString) {
+          return newValue !== oldValue.toString();
+        }
+        
+        // Comparaison simple pour les primitives
+        return newValue !== oldValue;
+      });
       
-      if (!isOnlyStatusChange) {
+      const isOnlyStatusChange = actuallyModifiedFields.length === 1 && actuallyModifiedFields[0] === 'status';
+      const noActualChanges = actuallyModifiedFields.length === 0;
+      
+      console.log('🔍 Analyse des modifications (facture finalisée/envoyée):', {
+        isFinalized: existingInvoice.isFinalized,
+        sentAt: existingInvoice.sentAt,
+        actuallyModifiedFields,
+        isOnlyStatusChange,
+        noActualChanges,
+        oldStatus: existingObj.status,
+        newStatus: validatedData.status
+      });
+
+      // Debug détaillé pour les champs détectés comme modifiés
+      if (actuallyModifiedFields.length > 0 && !isOnlyStatusChange) {
+        console.log('🔎 Détail des champs modifiés:');
+        actuallyModifiedFields.forEach(field => {
+          const oldVal = existingObj[field];
+          const newVal = validatedData[field as keyof typeof validatedData];
+          console.log(`  - ${field}:`, {
+            old: oldVal,
+            oldType: typeof oldVal,
+            oldIsDate: oldVal instanceof Date,
+            new: newVal,
+            newType: typeof newVal,
+          });
+        });
+      }
+      
+      // Si aucun changement réel ou seulement le statut, on autorise
+      if (!isOnlyStatusChange && !noActualChanges) {
         // Logger la tentative de modification dans l'audit trail
         await logInvoiceAction(
           id,
@@ -73,7 +153,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           { 
             blocked: true, 
             reason: existingInvoice.isFinalized ? 'facture_finalisée' : 'facture_envoyée',
-            attemptedChanges: modifiedFields
+            attemptedChanges: actuallyModifiedFields
           }
         );
 
@@ -85,6 +165,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           isFinalized: existingInvoice.isFinalized,
           finalizedAt: existingInvoice.finalizedAt,
           sentAt: existingInvoice.sentAt,
+          attemptedChanges: actuallyModifiedFields,
         }, { 
           status: 403,
           headers: {
@@ -93,7 +174,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           }
         });
       }
-      // Si c'est uniquement le status qui change, on autorise et on continue
+      // Si c'est uniquement le status qui change (ou aucun changement), on autorise et on continue
     }
 
     // Recalculate totals if items are being updated

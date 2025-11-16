@@ -63,6 +63,7 @@ export async function getRevenueOverview(
       $match: {
         userId: new mongoose.Types.ObjectId(userId),
         issueDate: { $gte: startDate, $lte: endDate },
+        deletedAt: null, // Exclure factures supprimées (soft delete)
       },
     },
     {
@@ -71,7 +72,7 @@ export async function getRevenueOverview(
         totalRevenue: {
           $sum: {
             $cond: [
-              { $in: ['\$status', ['paid', 'partially_paid']] },
+              { $in: ['$status', ['paid', 'partially_paid']] },
               '$total',
               0,
             ],
@@ -80,7 +81,7 @@ export async function getRevenueOverview(
         totalVAT: {
           $sum: {
             $cond: [
-              { $in: ['\$status', ['paid', 'partially_paid']] },
+              { $in: ['$status', ['paid', 'partially_paid']] },
               '$taxAmount',
               0,
             ],
@@ -91,19 +92,23 @@ export async function getRevenueOverview(
         },
         pendingAmount: {
           $sum: {
-            $cond: [{ $eq: ['\$status', 'pending'] }, '$balanceDue', 0],
+            $cond: [
+              { $in: ['$status', ['sent', 'draft']] },
+              '$balanceDue',
+              0
+            ],
           },
         },
         overdueAmount: {
           $sum: {
-            $cond: [{ $eq: ['\$status', 'overdue'] }, '$balanceDue', 0],
+            $cond: [{ $eq: ['$status', 'overdue'] }, '$balanceDue', 0],
           },
         },
         count: { $sum: 1 },
         paidCount: {
           $sum: {
             $cond: [
-              { $in: ['\$status', ['paid', 'partially_paid']] },
+              { $in: ['$status', ['paid', 'partially_paid']] },
               1,
               0,
             ],
@@ -223,7 +228,8 @@ export async function getMonthlyTrends(
       $match: {
         userId: new mongoose.Types.ObjectId(userId),
         issueDate: { $gte: startDate, $lte: endDate },
-        paymentStatus: { $in: ['paid', 'partially_paid'] },
+        status: { $in: ['paid', 'partially_paid'] },
+        deletedAt: null,
       },
     },
     {
@@ -318,7 +324,8 @@ export async function getTopClients(
       $match: {
         userId: new mongoose.Types.ObjectId(userId),
         issueDate: { $gte: startDate, $lte: endDate },
-        paymentStatus: { $in: ['paid', 'partially_paid'] },
+        status: { $in: ['paid', 'partially_paid'] },
+        deletedAt: null,
       },
     },
     {
@@ -375,7 +382,8 @@ export async function getVATBreakdown(
       $match: {
         userId: new mongoose.Types.ObjectId(userId),
         issueDate: { $gte: startDate, $lte: endDate },
-        paymentStatus: { $in: ['paid', 'partially_paid'] },
+        status: { $in: ['paid', 'partially_paid'] },
+        deletedAt: null,
       },
     },
     {
@@ -506,7 +514,8 @@ export async function getPaymentMethodDistribution(
       $match: {
         userId: new mongoose.Types.ObjectId(userId),
         issueDate: { $gte: startDate, $lte: endDate },
-        paymentStatus: { $in: ['paid', 'partially_paid'] },
+        status: { $in: ['paid', 'partially_paid'] },
+        deletedAt: null,
         paymentMethod: { $exists: true, $ne: null },
       },
     },

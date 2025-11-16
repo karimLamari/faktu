@@ -67,6 +67,7 @@ export interface IInvoiceTemplate extends Document {
   userId: mongoose.Types.ObjectId;
   name: string;
   description?: string;
+  templateComponent: string;  // Nom du composant de rendu (ModerneTemplate, ClassiqueTemplate, etc.)
   isDefault: boolean;
   colors: ITemplateColors;
   fonts: ITemplateFonts;
@@ -148,26 +149,32 @@ const TemplateCustomTextSchema = new Schema<ITemplateCustomText>({
 
 // Schema principal
 const InvoiceTemplateSchema = new Schema<IInvoiceTemplate>({
-  userId: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'User', 
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
     required: true,
     index: true,
   },
-  name: { 
-    type: String, 
-    required: true, 
+  name: {
+    type: String,
+    required: true,
     trim: true,
     minlength: 1,
     maxlength: 100,
   },
-  description: { 
-    type: String, 
+  description: {
+    type: String,
     trim: true,
     maxlength: 500,
   },
-  isDefault: { 
-    type: Boolean, 
+  templateComponent: {
+    type: String,
+    required: true,
+    default: 'ModerneTemplate',  // Template par défaut
+    enum: ['ModerneTemplate', 'ClassiqueTemplate', 'MinimalisteTemplate', 'StudioTemplate', 'CreatifTemplate'],
+  },
+  isDefault: {
+    type: Boolean,
     default: false,
     index: true,
   },

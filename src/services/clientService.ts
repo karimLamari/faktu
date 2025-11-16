@@ -37,11 +37,17 @@ export const clientService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
+    
+    const json = await res.json();
+    
     if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || 'Erreur lors de la création du client');
+      // Créer une erreur avec les infos de réponse attachées
+      const error: any = new Error(json.error || 'Erreur lors de la création du client');
+      error.response = { data: json, status: res.status };
+      throw error;
     }
-    return res.json();
+    
+    return json;
   },
 
   /**

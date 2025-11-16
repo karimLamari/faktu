@@ -4,16 +4,18 @@
  * Architecture:
  * - config/     → Configurations (presets, mentions légales)
  * - core/       → Logique métier (router, validation, utils)
- * - templates/  → Composants de rendu PDF (Moderne, Classique, Minimaliste, Créatif)
+ * - templates/  → Composants de rendu PDF (usage interne uniquement)
  * - components/ → Composants UI React (Customizer, Preview, Selector)
  * 
- * Usage:
+ * API Publique:
  * ```typescript
  * import {
- *   InvoicePDF,
- *   modernTemplate,
- *   TemplateCustomizer,
- *   calculateVATByRate
+ *   InvoicePDF,                    // Composant principal PDF
+ *   INVOICE_TEMPLATE_PRESETS,      // Tous les templates disponibles
+ *   DEFAULT_TEMPLATE,              // Template par défaut
+ *   TEMPLATE_LIST,                 // Liste pour UI
+ *   TemplateCustomizer,            // Composant React de customisation
+ *   calculateVATByRate,            // Utilitaires
  * } from '@/lib/invoice-templates';
  * ```
  */
@@ -37,18 +39,6 @@ export type {
 // ============================================================================
 
 export {
-  modernTemplate,
-  classicTemplate,
-  minimalTemplate,
-  creativeTemplate,
-  professionalTemplate,
-  elegantTemplate,
-  compactTemplate,
-  colorfulTemplate,
-  corporateTemplate,
-  prestigeTemplate,
-  studioTemplate,
-  techTemplate,
   INVOICE_TEMPLATE_PRESETS,
   DEFAULT_TEMPLATE,
   TEMPLATE_LIST,
@@ -89,23 +79,6 @@ export {
 } from './core/utils';
 
 // ============================================================================
-// TEMPLATES - Composants PDF
-// ============================================================================
-
-export { ModerneTemplate } from './templates/ModerneTemplate';
-export { ClassiqueTemplate } from './templates/ClassiqueTemplate';
-export { MinimalisteTemplate } from './templates/MinimalisteTemplate';
-export { CreatifTemplate } from './templates/CreatifTemplate';
-export { ProfessionnelTemplate } from './templates/ProfessionnelTemplate';
-export { ElegantTemplate } from './templates/ElegantTemplate';
-export { CompactTemplate } from './templates/CompactTemplate';
-export { ColorfulTemplate } from './templates/ColorfulTemplate';
-export { CorporateTemplate } from './templates/CorporateTemplate';
-export { PrestigeTemplate } from './templates/PrestigeTemplate';
-export { StudioTemplate } from './templates/StudioTemplate';
-export { TechTemplate } from './templates/TechTemplate';
-
-// ============================================================================
 // COMPONENTS - UI React
 // ============================================================================
 
@@ -117,16 +90,3 @@ export {
   ColorPicker,
   TemplatePreviewOptimized,
 } from './components';
-
-// ============================================================================
-// RE-EXPORTS pour backward compatibility
-// ============================================================================
-
-/**
- * @deprecated Importer directement depuis '@/lib/invoice-templates'
- * Ces exports seront supprimés dans v3.0
- */
-export * as Presets from './config/presets';
-export * as LegalMentions from './config/legal-mentions';
-export * as Validation from './core/validation';
-export * as Utils from './core/utils';
